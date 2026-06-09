@@ -47,6 +47,19 @@ export default function Boot({ session, onComplete }: BootProps) {
     return text.replace(/\{t\+[\d.]+\}/g, `t+${t}`);
   };
 
+  const renderLine = (line: string) => {
+    const okIndex = line.indexOf('[OK]');
+    if (okIndex === -1) return line || ' ';
+
+    return (
+      <>
+        {line.slice(0, okIndex)}
+        <span style={{ color: 'var(--online)' }}>[OK]</span>
+        {line.slice(okIndex + 4)}
+      </>
+    );
+  };
+
   useEffect(() => {
     let i = 0;
     const interval = setInterval(() => {
@@ -89,7 +102,7 @@ export default function Boot({ session, onComplete }: BootProps) {
         }}
       >
         {lines.map((line, i) => (
-          <div key={i}>{line || ' '}</div>
+          <div key={i}>{renderLine(line)}</div>
         ))}
         {!showSoundGate && (
           <span

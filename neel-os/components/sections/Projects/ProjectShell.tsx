@@ -17,7 +17,8 @@ export default function ProjectShell({ lines, onComplete }: ProjectShellProps) {
     let i = 0;
     const iv = setInterval(() => {
       if (i < lines.length) {
-        setShown(prev => [...prev, lines[i]]);
+        const line = lines[i] ?? '';
+        setShown(prev => [...prev, line]);
         i++;
       } else {
         clearInterval(iv);
@@ -42,9 +43,9 @@ export default function ProjectShell({ lines, onComplete }: ProjectShellProps) {
       }}
     >
       {shown.map((line, i) => {
-        const isOk    = line.includes('[OK]');
-        const isWarn  = line.includes('[WARN]') || line.includes('[BUILDING]');
-        const isInit  = line.startsWith('[INIT]');
+        const safeLine = line ?? '';
+        const isOk    = safeLine.includes('[OK]');
+        const isWarn  = safeLine.includes('[WARN]') || safeLine.includes('[BUILDING]');
         return (
           <div
             key={i}
@@ -53,7 +54,7 @@ export default function ProjectShell({ lines, onComplete }: ProjectShellProps) {
               opacity: isOk ? 0.9 : 1,
             }}
           >
-            {line || ' '}
+            {safeLine || ' '}
           </div>
         );
       })}

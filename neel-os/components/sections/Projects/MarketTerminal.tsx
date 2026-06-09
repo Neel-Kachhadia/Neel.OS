@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
+import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
 const TerminalShader = dynamic(() => import('@/components/webgl/TerminalShader'), { ssr: false });
@@ -41,6 +42,7 @@ const BUILD_MANIFEST = [
 
 export default function MarketTerminal() {
   const [shellDone, setShellDone] = useState(false);
+  const motionProfile = useMotionProfile();
 
   return (
     <section
@@ -55,7 +57,11 @@ export default function MarketTerminal() {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        <TerminalShader />
+        {motionProfile === 'static' ? (
+          <StaticProjectWorld />
+        ) : (
+          <TerminalShader />
+        )}
 
         {/* Build manifest overlay — HTML, not shader */}
         <div
@@ -145,5 +151,18 @@ export default function MarketTerminal() {
         )}
       </div>
     </section>
+  );
+}
+
+function StaticProjectWorld() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(180deg, var(--black) 0%, var(--terminal-bg) 100%)',
+      }}
+    />
   );
 }

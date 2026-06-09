@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
+import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
 const ResolveShader = dynamic(() => import('@/components/webgl/ResolveShader'), { ssr: false });
@@ -36,6 +37,8 @@ export default function NeuroFin() {
   const [shellDone, setShellDone] = useState(false);
   const [resolved, setResolved] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const motionProfile = useMotionProfile();
+  const shaderResolved = motionProfile === 'static' || resolved;
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -60,7 +63,11 @@ export default function NeuroFin() {
     >
       {/* Shader world */}
       <div style={{ height: '50vh', position: 'relative' }}>
-        <ResolveShader autoPlay onResolved={() => setResolved(true)} />
+        {motionProfile === 'static' ? (
+          <StaticProjectWorld variant="neurofin" />
+        ) : (
+          <ResolveShader autoPlay onResolved={() => setResolved(true)} />
+        )}
       </div>
 
       {/* Case study content */}
@@ -88,7 +95,7 @@ export default function NeuroFin() {
           <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />
         )}
 
-        {shellDone && resolved && (
+        {shellDone && shaderResolved && (
           <div style={{ marginTop: '40px' }}>
             {/* Project description */}
             <div
@@ -153,5 +160,22 @@ export default function NeuroFin() {
         )}
       </div>
     </section>
+  );
+}
+
+function StaticProjectWorld({ variant }: { variant: 'neurofin' }) {
+  const background = variant === 'neurofin'
+    ? 'linear-gradient(180deg, var(--black) 0%, var(--amber) 100%)'
+    : 'var(--black)';
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: '100%',
+        height: '100%',
+        background,
+      }}
+    />
   );
 }

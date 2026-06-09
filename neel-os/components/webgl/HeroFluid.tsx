@@ -20,9 +20,9 @@ uniform float u_velocity;
 varying vec2 vUv;
 
 float hash(vec2 p) {
-  p = fract(p * vec2(443.897, 441.423));
-  p += dot(p, p.yzx + 19.19);
-  return fract((p.x + p.y) * p.z);
+  vec3 p3 = fract(vec3(p.xyx) * vec3(443.897, 441.423, 437.195));
+  p3 += dot(p3, p3.yzx + 19.19);
+  return fract((p3.x + p3.y) * p3.z);
 }
 float noise(vec2 p) {
   vec2 i = floor(p); vec2 f = fract(p);

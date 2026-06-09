@@ -207,21 +207,7 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
               </div>
             )}
             {entry.lines.map((line, j) => (
-              <div
-                key={j}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '13px',
-                  lineHeight: 1.6,
-                  color: line.includes('[OK]') ? 'var(--online)' :
-                    line.includes('[WARN]') || line.includes('[BUILDING]') ? 'var(--amber)' :
-                    line.includes('[FAIL]') ? 'rgba(255,100,100,0.8)' :
-                    line.includes('[FIX]') ? 'var(--online)' :
-                    'var(--text-mono-dark)',
-                }}
-              >
-                {line || ' '}
-              </div>
+              <CommandLine key={j} line={line} />
             ))}
           </div>
         ))}
@@ -270,6 +256,27 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
           [esc]
         </span>
       </div>
+    </div>
+  );
+}
+
+function CommandLine({ line }: { line: string }) {
+  const safeLine = line ?? '';
+
+  return (
+    <div
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: '13px',
+        lineHeight: 1.6,
+        color: safeLine.includes('[OK]') ? 'var(--online)' :
+          safeLine.includes('[WARN]') || safeLine.includes('[BUILDING]') ? 'var(--amber)' :
+          safeLine.includes('[FAIL]') ? 'rgba(255,100,100,0.8)' :
+          safeLine.includes('[FIX]') ? 'var(--online)' :
+          'var(--text-mono-dark)',
+      }}
+    >
+      {safeLine || ' '}
     </div>
   );
 }

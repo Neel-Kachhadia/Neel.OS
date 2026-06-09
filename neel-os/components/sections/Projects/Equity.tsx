@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
+import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
 const ThesisShader = dynamic(() => import('@/components/webgl/ThesisShader'), { ssr: false });
@@ -32,6 +33,7 @@ const GIT_LOG = [
 
 export default function Equity() {
   const [shellDone, setShellDone] = useState(false);
+  const motionProfile = useMotionProfile();
 
   return (
     <section
@@ -45,7 +47,11 @@ export default function Equity() {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        <ThesisShader autoPlay />
+        {motionProfile === 'static' ? (
+          <StaticProjectWorld />
+        ) : (
+          <ThesisShader autoPlay />
+        )}
       </div>
 
       <div
@@ -115,5 +121,18 @@ export default function Equity() {
         )}
       </div>
     </section>
+  );
+}
+
+function StaticProjectWorld() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(180deg, var(--black) 0%, var(--cold-blue) 100%)',
+      }}
+    />
   );
 }
