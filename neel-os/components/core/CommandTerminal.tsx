@@ -64,7 +64,7 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
     const trimmed = cmd.trim();
     if (!trimmed) return;
 
-    const result = parseCommand(trimmed);
+    const result = parseCommand(trimmed, currentPath);
 
     // Add to command history
     const newCmdHistory = [trimmed, ...cmdHistory].slice(0, 50);

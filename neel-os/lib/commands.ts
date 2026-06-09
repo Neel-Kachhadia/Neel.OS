@@ -104,7 +104,7 @@ const LS_OUTPUT: Record<string, string[]> = {
   ],
 };
 
-export function parseCommand(input: string): CommandResult {
+export function parseCommand(input: string, currentPath = '/neel'): CommandResult {
   const trimmed = input.trim();
   const parts = trimmed.split(/\s+/);
   const cmd = parts[0]?.toLowerCase();
@@ -114,20 +114,23 @@ export function parseCommand(input: string): CommandResult {
     case 'help':
       return { lines: HELP_OUTPUT };
 
+    case 'pwd':
+      return { lines: [currentPath] };
+
     case 'whoami':
       return { lines: IDENTITY_LINES, action: 'navigate', actionArg: '/neel/identity' };
 
     case 'ls': {
-      const path = args[0] || '/neel';
-      const normalized = path.startsWith('/') ? path : `/neel/${path}`;
-      const output = LS_OUTPUT[normalized] || [`ls: ${path}: No such file or directory`];
+      const requestedPath = args[0] || '.';
+      const normalized = normalizePath(requestedPath, currentPath);
+      const output = LS_OUTPUT[normalized] || [`ls: ${requestedPath}: No such file or directory`];
       return { lines: output };
     }
 
     case 'cd': {
       const path = args[0];
       if (!path) return { lines: ['cd: missing path'] };
-      const normalized = path.startsWith('/') ? path : `/neel/${path}`;
+      const normalized = normalizePath(path, currentPath);
       if (!FILESYSTEM[normalized]) return { lines: [`cd: ${path}: No such directory`] };
       return { lines: [`→ ${normalized}`], action: 'navigate', actionArg: normalized };
     }
@@ -140,7 +143,7 @@ export function parseCommand(input: string): CommandResult {
     }
 
     case 'run': {
-      const project = args[0];
+      const project = normalizeProject(args[0]);
       if (!project) return { lines: ['run: specify project (neurofin | equity | market)'] };
       return { lines: runProject(project), action: 'navigate', actionArg: `/neel/projects/${project}` };
     }
@@ -244,39 +247,100 @@ const IDENTITY_LINES = [
 ];
 
 const HELP_OUTPUT = [
-  'NEEL.OS — available commands',
+  'NEEL.OS — terminal guide',
   '──────────────────────────────────────────────────────────',
+  'how to use this shell',
+  '  / or ctrl+k        open terminal from anywhere',
+  '  enter             run the current command',
+  '  esc               close terminal',
+  '  ↑ / ↓             command history',
+  '  tab               complete a filesystem path',
+  '',
+  'path rules',
+  '  /neel             filesystem root',
+  '  .                 current directory',
+  '  ..                parent directory',
+  '  ~                 same as /neel',
+  '  relative paths    resolved from the current prompt path',
+  '',
+  'examples',
+  '  pwd               show where you are',
+  '  ls                list current directory',
+  '  ls /neel/logs     list logs directly',
+  '  cd projects       go to /neel/projects',
+  '  cd ..             move one level up',
+  '  cat logs/failures.log',
+  '  run neurofin',
+  '  git log equity-research',
+  '  npm inspect three',
+  '',
   'navigation',
-  '  ls [path]          list directory contents',
-  '  cd [path]          change directory',
-  '  cat [file]         read file contents',
+  '  pwd               print current path',
+  '  ls [path]         list directory contents',
+  '  cd [path]         jump to a mounted section',
+  '  cat [file]        read a markdown/log file',
   '',
   'projects',
-  '  run neurofin       execute NeuroFin case study',
-  '  run equity         execute Equity Research case study',
-  '  run market         execute Market Terminal case study',
-  '  git log [project]  view project commit history',
+  '  run neurofin      execute NeuroFin case study',
+  '  run equity        execute Equity Research case study',
+  '  run market        execute Market Terminal case study',
+  '  git log [project] view project commit history',
   '',
   'stack',
-  '  npm inspect [pkg]  inspect package usage and reasoning',
+  '  npm inspect [pkg] inspect package usage and reasoning',
   '',
   'system',
-  '  whoami             read identity.md',
-  '  debug on/off       toggle debug mode',
-  '  recruiter mode     switch to recruiter view',
-  '  clear              clear terminal output',
+  '  whoami            read identity.md',
+  '  debug on/off      toggle debug mode',
+  '  recruiter mode    switch to recruiter view',
+  '  clear             clear terminal output',
   '',
   'external',
-  '  open github        open GitHub profile',
-  '  open linkedin      open LinkedIn profile',
-  '  cat resume.pdf     download resume',
+  '  open github       open GitHub profile',
+  '  open linkedin     open LinkedIn profile',
+  '  cat resume.pdf    download resume',
   '',
   'contact',
-  '  ssh transmission   open transmission channel',
-  '  sudo hire-neel     ...',
+  '  ssh transmission  open transmission channel',
+  '  sudo hire-neel    run the hiring handshake',
   '',
   '──────────────────────────────────────────────────────────',
 ];
+
+function normalizePath(path: string, currentPath: string): string {
+  if (!path || path === '.' || path === './') return currentPath;
+  if (path === '~' || path === '/' || path === '/neel') return '/neel';
+
+  const raw = path.startsWith('/')
+    ? path
+    : `${currentPath.replace(/\/$/, '')}/${path}`;
+
+  const parts = raw.split('/').filter(Boolean);
+  const normalized: string[] = [];
+  for (const part of parts) {
+    if (part === '.') continue;
+    if (part === '..') {
+      normalized.pop();
+      continue;
+    }
+    normalized.push(part);
+  }
+
+  const withRoot = normalized[0] === 'neel' ? normalized : ['neel', ...normalized];
+  const resolved = `/${withRoot.join('/')}`;
+  const aliases: Record<string, string> = {
+    '/neel/projects/equity-research': '/neel/projects/equity',
+    '/neel/projects/market-terminal': '/neel/projects/market',
+  };
+  return aliases[resolved] ?? resolved;
+}
+
+function normalizeProject(project?: string): string | undefined {
+  if (!project) return undefined;
+  if (project === 'equity-research') return 'equity';
+  if (project === 'market-terminal') return 'market';
+  return project;
+}
 
 function catFile(file: string): string[] {
   const name = file.replace(/^\/neel\//, '').replace(/^\//, '');

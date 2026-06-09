@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Session } from '@/lib/session';
+import { playBootChime, resumeSystemAudio } from '@/lib/audio';
 
 interface BootProps {
   session: Session;
-  onComplete: (soundEnabled: boolean) => void;
+  onComplete: (soundEnabled: boolean, resumePrevious?: boolean) => void;
 }
 
 const BOOT_LINES = [
@@ -39,8 +40,9 @@ const BOOT_LINES = [
 
 export default function Boot({ session, onComplete }: BootProps) {
   const [lines, setLines] = useState<string[]>([]);
-  const [showSoundGate, setShowSoundGate] = useState(false);
+  const [showGate, setShowGate] = useState(false);
   const startRef = useRef(performance.now());
+  const isReturnVisit = session.count > 1;
 
   const formatLine = (text: string): string => {
     const t = ((performance.now() - startRef.current) / 1000).toFixed(3);
@@ -62,14 +64,15 @@ export default function Boot({ session, onComplete }: BootProps) {
 
   useEffect(() => {
     let i = 0;
+    const source = isReturnVisit ? getReturnLines(session) : BOOT_LINES;
     const interval = setInterval(() => {
-      if (i < BOOT_LINES.length) {
-        const text = BOOT_LINES[i].text;
+      if (i < source.length) {
+        const text = source[i].text;
         setLines(prev => [...prev, formatLine(text)]);
         i++;
       } else {
         clearInterval(interval);
-        setTimeout(() => setShowSoundGate(true), 800);
+        setTimeout(() => setShowGate(true), isReturnVisit ? 450 : 800);
       }
     }, 90);
 
@@ -104,7 +107,7 @@ export default function Boot({ session, onComplete }: BootProps) {
         {lines.map((line, i) => (
           <div key={i}>{renderLine(line)}</div>
         ))}
-        {!showSoundGate && (
+        {!showGate && (
           <span
             style={{
               display: 'inline-block',
@@ -118,8 +121,15 @@ export default function Boot({ session, onComplete }: BootProps) {
         )}
       </pre>
 
-      {showSoundGate && (
-        <SoundGate onChoice={(enabled) => onComplete(enabled)} />
+      {showGate && !isReturnVisit && (
+        <SoundGate onChoice={(enabled) => onComplete(enabled, true)} />
+      )}
+
+      {showGate && isReturnVisit && (
+        <ReturnGate
+          soundEnabled={session.soundEnabled}
+          onChoice={(resumePrevious) => onComplete(session.soundEnabled, resumePrevious)}
+        />
       )}
 
       <style>{`
@@ -132,12 +142,32 @@ export default function Boot({ session, onComplete }: BootProps) {
   );
 }
 
+function getReturnLines(session: Session) {
+  return [
+    { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
+    { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
+    { key: 'cache',  text: 'Session restored from cache.' },
+    { key: 'sep2',   text: '──────────────────────────────────────────────────────────' },
+    { key: 'blank1', text: '' },
+    { key: 'welcome',text: 'Welcome back, visitor.' },
+    { key: 'last',   text: `Last session: ${session.lastPath || '/neel'}` },
+    { key: 'count',  text: `Session ${String(session.count).padStart(2, '0')}.` },
+    { key: 'blank2', text: '' },
+    { key: 'prompt', text: `Resume previous session?` },
+    { key: 'sep3',   text: '──────────────────────────────────────────────────────────' },
+  ];
+}
+
 function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
   const [chosen, setChosen] = useState<'y' | 'n' | null>(null);
 
-  const handleChoice = (v: 'y' | 'n') => {
+  const handleChoice = async (v: 'y' | 'n') => {
     if (chosen !== null) return;
     setChosen(v);
+    if (v === 'y') {
+      const ready = await resumeSystemAudio();
+      if (ready) playBootChime();
+    }
     setTimeout(() => onChoice(v === 'y'), 300);
   };
 
@@ -173,6 +203,60 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
           [n{chosen === 'n' ? ' ●' : ''}]
         </button>
       </div>
+    </div>
+  );
+}
+
+function ReturnGate({
+  soundEnabled,
+  onChoice,
+}: {
+  soundEnabled: boolean;
+  onChoice: (resumePrevious: boolean) => void;
+}) {
+  const [chosen, setChosen] = useState<'yes' | 'fresh' | null>(null);
+
+  const handleChoice = async (resumePrevious: boolean) => {
+    if (chosen !== null) return;
+    setChosen(resumePrevious ? 'yes' : 'fresh');
+    if (soundEnabled) {
+      const ready = await resumeSystemAudio();
+      if (ready) playBootChime();
+    }
+    setTimeout(() => onChoice(resumePrevious), 260);
+  };
+
+  return (
+    <div
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: '13px',
+        color: 'var(--text-on-black)',
+        marginTop: '20px',
+        display: 'flex',
+        gap: '16px',
+      }}
+    >
+      <button
+        onClick={() => handleChoice(true)}
+        data-cursor-hover
+        style={{
+          ...gateButtonStyle,
+          color: chosen === 'yes' ? 'var(--online)' : 'var(--text-on-black)',
+        }}
+      >
+        [yes{chosen === 'yes' ? ' ●' : ''}]
+      </button>
+      <button
+        onClick={() => handleChoice(false)}
+        data-cursor-hover
+        style={{
+          ...gateButtonStyle,
+          color: chosen === 'fresh' ? 'var(--online)' : 'var(--text-on-black)',
+        }}
+      >
+        [start fresh{chosen === 'fresh' ? ' ●' : ''}]
+      </button>
     </div>
   );
 }

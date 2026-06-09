@@ -1,3 +1,5 @@
+import { playDecryptClick } from './audio';
+
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*!?';
 
 export type DecryptCallback = (text: string) => void;
@@ -33,7 +35,7 @@ export function decrypt(
 
         if (soundEnabled) {
           const isLast = i === targetText.length - 1;
-          playDecryptSound(isLast);
+          playDecryptClick(isLast);
         }
 
         if (i === targetText.length - 1 && onComplete) {
@@ -45,20 +47,6 @@ export function decrypt(
 
   return total;
 }
-
-async function playDecryptSound(isLast: boolean) {
-  try {
-    const Tone = await import('tone');
-    const synth = new Tone.Synth({
-      oscillator: { type: 'square' },
-      envelope: { attack: 0.001, decay: isLast ? 0.078 : 0.019, sustain: 0, release: 0 },
-    }).toDestination();
-    synth.volume.value = -20;
-    synth.triggerAttackRelease(isLast ? 800 : 1200, isLast ? '80n' : '32n');
-    setTimeout(() => synth.dispose(), 500);
-  } catch { /* silent */ }
-}
-
 // React hook helper — returns current display text
 export function useDecrypt(
   targetText: string,

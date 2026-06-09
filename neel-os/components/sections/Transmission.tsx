@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { playContactChime } from '@/lib/audio';
 
 interface Particle {
   x: number;
@@ -13,7 +14,11 @@ interface Particle {
 
 const EMAIL = 'neel1234kachhadia@gmail.com';
 
-export default function Transmission() {
+interface TransmissionProps {
+  soundEnabled?: boolean;
+}
+
+export default function Transmission({ soundEnabled = false }: TransmissionProps) {
   const sectionRef    = useRef<HTMLDivElement>(null);
   const emailRef      = useRef<HTMLDivElement>(null);
   const canvasRef     = useRef<HTMLCanvasElement>(null);
@@ -112,7 +117,8 @@ export default function Transmission() {
       setTimeout(() => setCopied(false), 2000);
     } catch {/* ignore */}
     spawnParticles(e.clientX, e.clientY);
-  }, []);
+    if (soundEnabled) playContactChime();
+  }, [soundEnabled]);
 
   return (
     <section

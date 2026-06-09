@@ -17,8 +17,9 @@ export default function Grain() {
     const ctx = canvas.getContext('2d')!;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const scale = motionProfile === 'reduced' ? 0.35 : 0.5;
+      canvas.width = Math.ceil(window.innerWidth * scale);
+      canvas.height = Math.ceil(window.innerHeight * scale);
     };
     resize();
     window.addEventListener('resize', resize);

@@ -32,18 +32,26 @@ const GIT_LOG = [
   'commit 7a1f445  initial FastAPI microservice scaffold',
 ];
 
-export default function NeuroFin() {
+interface NeuroFinProps {
+  soundEnabled?: boolean;
+}
+
+export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
   const [phase, setPhase] = useState<'shell' | 'case-study'>('shell');
   const [shellDone, setShellDone] = useState(false);
   const [resolved, setResolved] = useState(false);
+  const [shaderActive, setShaderActive] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const motionProfile = useMotionProfile();
   const shaderResolved = motionProfile === 'static' || resolved;
 
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setPhase('shell'); },
-      { threshold: 0.3 }
+      ([entry]) => {
+        setShaderActive(entry.isIntersecting);
+        if (entry.isIntersecting) setPhase('shell');
+      },
+      { rootMargin: '700px 0px', threshold: 0.01 }
     );
     if (sectionRef.current) obs.observe(sectionRef.current);
     return () => obs.disconnect();
@@ -63,7 +71,7 @@ export default function NeuroFin() {
     >
       {/* Shader world */}
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' ? (
+        {motionProfile === 'static' || !shaderActive ? (
           <StaticProjectWorld variant="neurofin" />
         ) : (
           <ResolveShader autoPlay onResolved={() => setResolved(true)} />
@@ -88,7 +96,7 @@ export default function NeuroFin() {
             letterSpacing: '-0.02em',
           }}
         >
-          <DecryptText text="NEUROFIN" />
+          <DecryptText text="NEUROFIN" soundEnabled={soundEnabled} />
         </div>
 
         {phase === 'shell' && (

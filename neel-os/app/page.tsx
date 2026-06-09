@@ -50,19 +50,16 @@ export default function Home() {
   const [currentPath, setCurrentPath]     = useState('/neel');
   const [isBooting, setIsBooting]         = useState(true);
   const [isMobile, setIsMobile]           = useState(false);
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
 
   // Session init — runs once after mount, reads localStorage
   useEffect(() => {
     const s = initSession();
-    const isReturn = s.count > 1;
     setSession(s);
-    setAppState(isReturn ? 'hero' : 'booting');
+    setAppState('booting');
     setSoundEnabled(s.soundEnabled ?? false);
     setMode((s.mode as Mode) ?? 'visitor');
     setCurrentPath(s.lastPath ?? '/neel');
-    setIsBooting(!isReturn);
-    setShowResumePrompt(isReturn);
+    setIsBooting(true);
     setMounted(true);
   }, []);
 
@@ -77,11 +74,24 @@ export default function Home() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const handleBootComplete = (sound: boolean) => {
+  const scrollToPath = useCallback((path: string) => {
+    requestAnimationFrame(() => {
+      const section = path.split('/').pop();
+      const el = document.querySelector(`#${section}`);
+      if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.15 });
+    });
+  }, []);
+
+  const handleBootComplete = (sound: boolean, resumePrevious = true) => {
+    const nextPath = resumePrevious ? (session?.lastPath ?? '/neel') : '/neel';
     setSoundEnabled(sound);
-    updateSession({ soundEnabled: sound });
+    setCurrentPath(nextPath);
+    updateSession({ soundEnabled: sound, lastPath: nextPath });
     setIsBooting(false);
     setAppState('hero');
+    if (resumePrevious && nextPath !== '/neel') {
+      setTimeout(() => scrollToPath(nextPath), 150);
+    }
   };
 
   const handleModeChange = (m: Mode) => {
@@ -98,20 +108,6 @@ export default function Home() {
     setCurrentPath(path);
     updateSession({ lastPath: path });
   };
-
-  const handleResumeYes = useCallback(() => {
-    setShowResumePrompt(false);
-    const lastPath = session?.lastPath;
-    if (lastPath && lastPath !== '/neel') {
-      handleNavigate(lastPath);
-      requestAnimationFrame(() => {
-        const section = lastPath.split('/').pop();
-        const el = document.querySelector(`#${section}`);
-        if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.2 });
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.lastPath]);
 
   const handleRecruiterTransmission = useCallback(() => {
     handleModeChange('visitor');
@@ -206,40 +202,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Return visit resume prompt — shows on hero */}
-          {showResumePrompt && (
-            <div
-              style={{
-                position: 'fixed',
-                bottom: '56px',
-                left: 'calc(200px + clamp(24px, 5vw, 80px))',
-                zIndex: 35,
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                color: 'var(--text-on-black)',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'center',
-                opacity: 0.8,
-              }}
-            >
-              <span>Resume previous session?</span>
-              <button
-                onClick={handleResumeYes}
-                data-cursor-hover
-                style={resumeBtnStyle}
-              >
-                [yes]
-              </button>
-              <button
-                onClick={() => setShowResumePrompt(false)}
-                data-cursor-hover
-                style={resumeBtnStyle}
-              >
-                [no]
-              </button>
-            </div>
-          )}
         </>
       )}
 
@@ -254,9 +216,9 @@ export default function Home() {
           <Unreasonable />
           <Counter />
           <section id="projects">
-            <NeuroFin />
-            <Equity />
-            <MarketTerminal />
+            <NeuroFin soundEnabled={soundEnabled} />
+            <Equity soundEnabled={soundEnabled} />
+            <MarketTerminal soundEnabled={soundEnabled} />
           </section>
           <Identity />
           <Logs />
@@ -273,7 +235,7 @@ export default function Home() {
           <Stack />
           <Capabilities />
           <AskNeel />
-          <Transmission />
+          <Transmission soundEnabled={soundEnabled} />
         </main>
       )}
 
@@ -283,15 +245,3 @@ export default function Home() {
     </LenisProvider>
   );
 }
-
-const resumeBtnStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  fontFamily: 'var(--font-mono)',
-  fontSize: '12px',
-  color: 'var(--text-on-black)',
-  padding: 0,
-  opacity: 0.8,
-  transition: 'opacity 0.15s',
-};

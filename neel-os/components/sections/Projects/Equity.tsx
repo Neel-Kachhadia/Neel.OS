@@ -31,13 +31,31 @@ const GIT_LOG = [
   'commit 9d2b440  FastAPI microservice architecture',
 ];
 
-export default function Equity() {
+interface EquityProps {
+  soundEnabled?: boolean;
+}
+
+export default function Equity({ soundEnabled = false }: EquityProps) {
   const [shellDone, setShellDone] = useState(false);
+  const [shaderActive, setShaderActive] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const motionProfile = useMotionProfile();
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShaderActive(entry.isIntersecting),
+      { rootMargin: '700px 0px', threshold: 0.01 }
+    );
+    obs.observe(section);
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <section
       id="equity"
+      ref={sectionRef}
       data-cursor-accent="#1E3A5F"
       style={{
         background: 'var(--cold-blue)',
@@ -47,10 +65,10 @@ export default function Equity() {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' ? (
+        {motionProfile === 'static' || !shaderActive ? (
           <StaticProjectWorld />
         ) : (
-          <ThesisShader autoPlay />
+          <ThesisShader autoPlay soundEnabled={soundEnabled} />
         )}
       </div>
 
@@ -71,7 +89,7 @@ export default function Equity() {
             letterSpacing: '-0.02em',
           }}
         >
-          <DecryptText text="EQUITY RESEARCH" />
+          <DecryptText text="EQUITY RESEARCH" soundEnabled={soundEnabled} />
         </div>
 
         <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />

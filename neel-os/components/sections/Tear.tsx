@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { getLenis } from '@/lib/lenis';
 import { gsap } from '@/lib/gsap';
+import { playTearBoom } from '@/lib/audio';
 import { useMotionProfile } from '@/hooks/useMotionProfile';
 
 const TearShader = dynamic(() => import('@/components/webgl/TearShader'), { ssr: false });
@@ -72,21 +73,7 @@ export default function Tear({ soundEnabled = false }: TearProps) {
     }
   }, [motionProfile, soundEnabled]);
 
-  if (motionProfile === 'static') return null;
+  if (motionProfile === 'static' || tearProgress <= 0.001) return null;
 
   return <TearShader progress={tearProgress} />;
-}
-
-async function playTearBoom() {
-  try {
-    const Tone = await import('tone');
-    await Tone.start();
-    const synth = new Tone.Synth({
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.05, decay: 1.15, sustain: 0, release: 0 },
-    }).toDestination();
-    synth.volume.value = -6;
-    synth.triggerAttackRelease(40, '1.2');
-    setTimeout(() => synth.dispose(), 2000);
-  } catch { /* audio not available */ }
 }

@@ -69,10 +69,9 @@ export default function TerminalShader() {
     resize();
     window.addEventListener('resize', resize);
 
-    const start = performance.now();
     const tick = () => {
       rafRef.current = requestAnimationFrame(tick);
-      uniforms.u_time.value = (performance.now() - start) / 1000;
+      uniforms.u_time.value = performance.now() / 1000;
       renderer.render(scene, camera);
     };
     rafRef.current = requestAnimationFrame(tick);

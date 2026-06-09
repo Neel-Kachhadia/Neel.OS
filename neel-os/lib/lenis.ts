@@ -10,10 +10,12 @@ export function initLenis(): Lenis {
   if (instance) return instance;
 
   instance = new Lenis({
-    duration: 1.2,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    duration: 1.15,
+    easing: (t) => 1 - Math.pow(1 - t, 4),
     orientation: 'vertical',
     smoothWheel: true,
+    wheelMultiplier: 0.85,
+    touchMultiplier: 1.15,
   });
 
   return instance;

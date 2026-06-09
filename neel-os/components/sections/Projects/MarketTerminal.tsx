@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
 import { useMotionProfile } from '@/hooks/useMotionProfile';
@@ -40,13 +40,31 @@ const BUILD_MANIFEST = [
   { label: 'TAURI SHELL',    done: false },
 ];
 
-export default function MarketTerminal() {
+interface MarketTerminalProps {
+  soundEnabled?: boolean;
+}
+
+export default function MarketTerminal({ soundEnabled = false }: MarketTerminalProps) {
   const [shellDone, setShellDone] = useState(false);
+  const [shaderActive, setShaderActive] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const motionProfile = useMotionProfile();
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShaderActive(entry.isIntersecting),
+      { rootMargin: '700px 0px', threshold: 0.01 }
+    );
+    obs.observe(section);
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <section
       id="market"
+      ref={sectionRef}
       data-cursor-accent="#003D2E"
       style={{
         background: 'var(--terminal-bg)',
@@ -57,7 +75,7 @@ export default function MarketTerminal() {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' ? (
+        {motionProfile === 'static' || !shaderActive ? (
           <StaticProjectWorld />
         ) : (
           <TerminalShader />
@@ -101,7 +119,7 @@ export default function MarketTerminal() {
             letterSpacing: '-0.02em',
           }}
         >
-          <DecryptText text="MARKET TERMINAL" />
+          <DecryptText text="MARKET TERMINAL" soundEnabled={soundEnabled} />
         </div>
 
         <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />

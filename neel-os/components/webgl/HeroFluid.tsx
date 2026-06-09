@@ -66,6 +66,11 @@ export default function HeroFluid({ velocity }: HeroFluidProps) {
     mouse: new THREE.Vector2(0.5, 0.5),
     targetMouse: new THREE.Vector2(0.5, 0.5),
   });
+  const velocityRef = useRef(velocity);
+
+  useEffect(() => {
+    velocityRef.current = velocity;
+  }, [velocity]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -121,7 +126,7 @@ export default function HeroFluid({ velocity }: HeroFluidProps) {
 
       uniforms.u_time.value += dt;
       uniforms.u_mouse.value.copy(s.mouse);
-      uniforms.u_velocity.value += (velocity - uniforms.u_velocity.value) * 0.1;
+      uniforms.u_velocity.value += (velocityRef.current - uniforms.u_velocity.value) * 0.1;
 
       renderer.render(scene, camera);
     };
@@ -135,11 +140,6 @@ export default function HeroFluid({ velocity }: HeroFluidProps) {
       material.dispose();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update velocity uniform without re-mounting
-  useEffect(() => {
-    // handled inside tick via closure ref
-  }, [velocity]);
 
   return (
     <canvas

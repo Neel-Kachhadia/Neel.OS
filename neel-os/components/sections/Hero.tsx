@@ -17,6 +17,7 @@ export default function Hero({ sessionCount, scrollVelocity = 0 }: HeroProps) {
   const [mouseVelocity, setMouseVelocity] = useState(0);
   const lastMouseRef = useRef({ x: 0, y: 0, t: 0 });
   const velRef = useRef(0);
+  const mouseRafRef = useRef<number>(0);
 
   useEffect(() => {
     const onMouse = (e: MouseEvent) => {
@@ -27,13 +28,21 @@ export default function Hero({ sessionCount, scrollVelocity = 0 }: HeroProps) {
       if (dt > 0) {
         const speed = Math.sqrt(dx * dx + dy * dy) / dt;
         velRef.current = velRef.current * 0.7 + speed * 30 * 0.3;
-        setMouseVelocity(velRef.current);
+        if (!mouseRafRef.current) {
+          mouseRafRef.current = requestAnimationFrame(() => {
+            mouseRafRef.current = 0;
+            setMouseVelocity(velRef.current);
+          });
+        }
       }
       lastMouseRef.current = { x: e.clientX, y: e.clientY, t: now };
     };
 
     window.addEventListener('mousemove', onMouse);
-    return () => window.removeEventListener('mousemove', onMouse);
+    return () => {
+      window.removeEventListener('mousemove', onMouse);
+      if (mouseRafRef.current) cancelAnimationFrame(mouseRafRef.current);
+    };
   }, []);
 
   const usePhysics = motionProfile === 'full';
