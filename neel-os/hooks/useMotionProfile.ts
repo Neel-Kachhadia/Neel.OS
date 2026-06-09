@@ -21,9 +21,19 @@ function getInitialProfile(): MotionProfile {
 }
 
 export function useMotionProfile(): MotionProfile {
-  const [profile, setProfile] = useState<MotionProfile>(getInitialProfile);
+  // Start with 'full' — identical on server and client, avoids hydration mismatch.
+  // Real value is read in useEffect after mount.
+  const [profile, setProfile] = useState<MotionProfile>('full');
 
   useEffect(() => {
+    // Read stored preference after mount
+    const stored = localStorage.getItem(STORAGE_KEY) as MotionProfile | null;
+    if (stored) {
+      setProfile(stored);
+    } else if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setProfile('reduced');
+    }
+
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const mqHandler = (e: MediaQueryListEvent) => {

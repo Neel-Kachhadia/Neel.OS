@@ -40,22 +40,31 @@ const PocketShell = dynamic(() => import('@/components/mobile/PocketShell'), { s
 type AppState = 'booting' | 'hero';
 
 export default function Home() {
-  // session init must happen first — it increments count in localStorage
-  const [session] = useState<Session | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return initSession();
-  });
-
-  // After initSession() ran, read the updated count to decide start state
-  const isReturnVisit = session ? session.count > 1 : false;
-
-  const [appState, setAppState]           = useState<AppState>(isReturnVisit ? 'hero' : 'booting');
-  const [soundEnabled, setSoundEnabled]   = useState<boolean>(() => session?.soundEnabled ?? false);
-  const [mode, setMode]                   = useState<Mode>(() => (session?.mode as Mode) ?? 'visitor');
-  const [currentPath, setCurrentPath]     = useState<string>(() => session?.lastPath ?? '/neel');
-  const [isBooting, setIsBooting]         = useState(!isReturnVisit);
+  // All state starts at SSR-safe defaults (identical server + client first render).
+  // Real values are set in useEffect after mount to avoid hydration mismatch #418/#423.
+  const [mounted, setMounted]             = useState(false);
+  const [session, setSession]             = useState<Session | null>(null);
+  const [appState, setAppState]           = useState<AppState>('booting');
+  const [soundEnabled, setSoundEnabled]   = useState(false);
+  const [mode, setMode]                   = useState<Mode>('visitor');
+  const [currentPath, setCurrentPath]     = useState('/neel');
+  const [isBooting, setIsBooting]         = useState(true);
   const [isMobile, setIsMobile]           = useState(false);
-  const [showResumePrompt, setShowResumePrompt] = useState(isReturnVisit);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+
+  // Session init — runs once after mount, reads localStorage
+  useEffect(() => {
+    const s = initSession();
+    const isReturn = s.count > 1;
+    setSession(s);
+    setAppState(isReturn ? 'hero' : 'booting');
+    setSoundEnabled(s.soundEnabled ?? false);
+    setMode((s.mode as Mode) ?? 'visitor');
+    setCurrentPath(s.lastPath ?? '/neel');
+    setIsBooting(!isReturn);
+    setShowResumePrompt(isReturn);
+    setMounted(true);
+  }, []);
 
   // motionProfile — driven by useMotionProfile hook (localStorage + OS media query + manual)
   const motionProfile = useMotionProfile();
@@ -113,7 +122,7 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!session) return null;
+  if (!mounted || !session) return null;
 
   // Mobile: completely different component tree
   if (isMobile) {

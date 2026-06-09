@@ -20,6 +20,17 @@ float wave(vec2 uv, float freq, float amp, float phase, float snap) {
   return smoothstep(0.008, 0.001, abs(y - result));
 }
 
+// Uniform arrays cannot be indexed with non-constant expressions on strict WebGL 1 drivers.
+// Use constant indices via if-else to avoid VALIDATE_STATUS false.
+float getSnap(int idx) {
+  if(idx==0) return u_snaps[0];
+  if(idx==1) return u_snaps[1];
+  if(idx==2) return u_snaps[2];
+  if(idx==3) return u_snaps[3];
+  if(idx==4) return u_snaps[4];
+  return u_snaps[5];
+}
+
 void main() {
   vec2 uv = vUv;
   vec3 color = vec3(0.118, 0.227, 0.373);
@@ -33,8 +44,9 @@ void main() {
   float opacs[6];  opacs[0]=0.4;  opacs[1]=0.5;   opacs[2]=0.35; opacs[3]=0.6;   opacs[4]=0.3;   opacs[5]=0.8;
 
   for(int i=0;i<6;i++) {
-    float w = wave(uv, freqs[i], amps[i], phases[i], u_snaps[i]);
-    vec3 wc = mix(vec3(0.118,0.227,0.373)*(1.0+opacs[i]), vec3(0.580,0.635,0.722), u_snaps[i]);
+    float snap = getSnap(i);
+    float w = wave(uv, freqs[i], amps[i], phases[i], snap);
+    vec3 wc = mix(vec3(0.118,0.227,0.373)*(1.0+opacs[i]), vec3(0.580,0.635,0.722), snap);
     color = mix(color, wc, w * opacs[i]);
   }
 
