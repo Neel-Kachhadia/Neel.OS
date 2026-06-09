@@ -51,7 +51,8 @@ export default function Boot({ session, onComplete }: BootProps) {
     let i = 0;
     const interval = setInterval(() => {
       if (i < BOOT_LINES.length) {
-        setLines(prev => [...prev, formatLine(BOOT_LINES[i].text)]);
+        const text = BOOT_LINES[i].text;
+        setLines(prev => [...prev, formatLine(text)]);
         i++;
       } else {
         clearInterval(interval);
