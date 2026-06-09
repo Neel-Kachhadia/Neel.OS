@@ -105,7 +105,7 @@ export default function Hero({ sessionCount, scrollVelocity = 0 }: HeroProps) {
           position: 'absolute',
           bottom: 'clamp(80px, 12vh, 160px)',
           left: 'calc(200px + clamp(24px, 5vw, 80px))',
-          fontFamily: 'var(--font-display)',
+          fontFamily: 'var(--font-body)',
           fontSize: 'clamp(14px, 2vw, 20px)',
           color: 'var(--text-secondary)',
           fontWeight: 300,

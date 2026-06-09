@@ -84,3 +84,19 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Keyboard focus — only shown for keyboard nav, not mouse */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--online);
+  outline-offset: 3px;
+}
+
+/* Inputs/textareas already handle focus via caret — suppress ring */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}

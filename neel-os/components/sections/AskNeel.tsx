@@ -53,7 +53,7 @@ export default function AskNeel() {
         if (res.status === 429) {
           setError('rate limit — 10 queries per hour');
         } else if (res.status === 503) {
-          setError('GROQ_API_KEY not configured in .env.local');
+          setError('api not configured');
         } else {
           setError(err.error ?? 'system error');
         }
@@ -97,27 +97,20 @@ export default function AskNeel() {
       <div
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
+          fontSize: '12px',
           color: 'var(--text-mono-dark)',
-          letterSpacing: '0.1em',
-          marginBottom: '32px',
+          marginBottom: '8px',
         }}
       >
-        /neel/query — ask the system
+        NEEL.OS &nbsp;·&nbsp; QUERY INTERFACE &nbsp;·&nbsp;{' '}
+        <span style={{ color: 'var(--online)' }}>ONLINE</span>
       </div>
-
       <div
         style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(24px, 3.5vw, 40px)',
-          color: 'var(--text-on-black)',
-          fontWeight: 300,
-          marginBottom: '40px',
-          lineHeight: 1.2,
+          borderBottom: '1px solid rgba(245,240,232,0.15)',
+          marginBottom: '32px',
         }}
-      >
-        Ask Neel
-      </div>
+      />
 
       {/* Suggestions */}
       {!response && !loading && (
@@ -189,6 +182,7 @@ export default function AskNeel() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="query the system..."
+          aria-label="Ask Neel a question"
           disabled={loading}
           style={{
             flex: 1,

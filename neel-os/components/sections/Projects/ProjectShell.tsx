@@ -26,7 +26,7 @@ export default function ProjectShell({ lines, onComplete }: ProjectShellProps) {
           onComplete?.();
         }
       }
-    }, 80);
+    }, 160);
     return () => clearInterval(iv);
   }, [lines]); // eslint-disable-line react-hooks/exhaustive-deps
 

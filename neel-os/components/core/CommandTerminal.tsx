@@ -23,7 +23,14 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [histIdx, setHistIdx] = useState(-1);
-  const [cmdHistory, setCmdHistory] = useState<string[]>([]);
+  const [cmdHistory, setCmdHistory] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('neel_os_session');
+      const s = raw ? JSON.parse(raw) : null;
+      return Array.isArray(s?.commandHistory) ? s.commandHistory : [];
+    } catch { return []; }
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -240,6 +247,11 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          aria-label="Command input"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           style={{
             flex: 1,
             background: 'none',

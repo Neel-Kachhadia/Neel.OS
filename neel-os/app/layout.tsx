@@ -32,9 +32,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NEEL.OS',
-  description: 'A living portfolio runtime by Neel Kachhadia.',
+  title: 'NEEL.OS — Neel Kachhadia',
+  description: 'Portfolio of Neel Kachhadia — AI engineer building NeuroFin, Equity Research Platform, and Indian Market Terminal. B.Tech DJSCE Mumbai.',
   robots: 'index, follow',
+  openGraph: {
+    title: 'NEEL.OS — Neel Kachhadia',
+    description: 'A living portfolio runtime. Systems deployed. Shipping fast. Mumbai.',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

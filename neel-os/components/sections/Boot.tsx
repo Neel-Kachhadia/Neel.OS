@@ -37,23 +37,10 @@ const BOOT_LINES = [
   { key: 'rm7',    text: "Type help anytime." },
 ];
 
-const RETURN_LINES = (lastPath: string, count: number) => [
-  { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
-  { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
-  { key: 'cache',  text: 'Session restored from cache.' },
-  { key: 'sep2',   text: '──────────────────────────────────────────────────────────' },
-  { key: 'blank',  text: '' },
-  { key: 'wb',     text: 'Welcome back, visitor.' },
-  { key: 'lp',     text: `Last session: ${lastPath}` },
-  { key: 'sc',     text: `Session ${String(count).padStart(2, '0')}.` },
-];
-
 export default function Boot({ session, onComplete }: BootProps) {
   const [lines, setLines] = useState<string[]>([]);
   const [showSoundGate, setShowSoundGate] = useState(false);
-  const [showResume, setShowResume] = useState(false);
   const startRef = useRef(performance.now());
-  const isReturn = session.count > 1;
 
   const formatLine = (text: string): string => {
     const t = ((performance.now() - startRef.current) / 1000).toFixed(3);
@@ -61,31 +48,19 @@ export default function Boot({ session, onComplete }: BootProps) {
   };
 
   useEffect(() => {
-    const rawLines = isReturn
-      ? RETURN_LINES(session.lastPath, session.count)
-      : BOOT_LINES;
-
     let i = 0;
     const interval = setInterval(() => {
-      if (i < rawLines.length) {
-        setLines(prev => [...prev, formatLine(rawLines[i].text)]);
+      if (i < BOOT_LINES.length) {
+        setLines(prev => [...prev, formatLine(BOOT_LINES[i].text)]);
         i++;
       } else {
         clearInterval(interval);
-        if (isReturn) {
-          setShowResume(true);
-        } else {
-          setTimeout(() => setShowSoundGate(true), 400);
-        }
+        setTimeout(() => setShowSoundGate(true), 800);
       }
-    }, 60);
+    }, 90);
 
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleResume = (fresh: boolean) => {
-    onComplete(session.soundEnabled);
-  };
 
   return (
     <div
@@ -113,9 +88,9 @@ export default function Boot({ session, onComplete }: BootProps) {
         }}
       >
         {lines.map((line, i) => (
-          <div key={i}>{line || ' '}</div>
+          <div key={i}>{line || ' '}</div>
         ))}
-        {!showSoundGate && !showResume && (
+        {!showSoundGate && (
           <span
             style={{
               display: 'inline-block',
@@ -133,35 +108,6 @@ export default function Boot({ session, onComplete }: BootProps) {
         <SoundGate onChoice={(enabled) => onComplete(enabled)} />
       )}
 
-      {showResume && (
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '13px',
-            color: 'var(--text-on-black)',
-            marginTop: '24px',
-            display: 'flex',
-            gap: '16px',
-          }}
-        >
-          <span>Resume previous session?</span>
-          <button
-            onClick={() => handleResume(false)}
-            data-cursor-hover
-            style={gateButtonStyle}
-          >
-            [yes]
-          </button>
-          <button
-            onClick={() => handleResume(true)}
-            data-cursor-hover
-            style={gateButtonStyle}
-          >
-            [start fresh]
-          </button>
-        </div>
-      )}
-
       <style>{`
         @keyframes blink {
           0%, 100% { opacity: 1; }
@@ -173,6 +119,14 @@ export default function Boot({ session, onComplete }: BootProps) {
 }
 
 function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
+  const [chosen, setChosen] = useState<'y' | 'n' | null>(null);
+
+  const handleChoice = (v: 'y' | 'n') => {
+    if (chosen !== null) return;
+    setChosen(v);
+    setTimeout(() => onChoice(v === 'y'), 300);
+  };
+
   return (
     <div
       style={{
@@ -185,18 +139,24 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
       <div style={{ marginBottom: '16px' }}>enable system audio?</div>
       <div style={{ display: 'flex', gap: '16px' }}>
         <button
-          onClick={() => onChoice(true)}
+          onClick={() => handleChoice('y')}
           data-cursor-hover
-          style={gateButtonStyle}
+          style={{
+            ...gateButtonStyle,
+            color: chosen === 'y' ? 'var(--online)' : 'var(--text-on-black)',
+          }}
         >
-          [y]
+          [y{chosen === 'y' ? ' ●' : ''}]
         </button>
         <button
-          onClick={() => onChoice(false)}
+          onClick={() => handleChoice('n')}
           data-cursor-hover
-          style={gateButtonStyle}
+          style={{
+            ...gateButtonStyle,
+            color: chosen === 'n' ? 'var(--online)' : 'var(--text-on-black)',
+          }}
         >
-          [n]
+          [n{chosen === 'n' ? ' ●' : ''}]
         </button>
       </div>
     </div>
@@ -209,8 +169,7 @@ const gateButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
   fontFamily: 'var(--font-mono)',
   fontSize: '13px',
-  color: 'var(--text-on-black)',
   padding: 0,
-  opacity: 0.8,
-  transition: 'opacity 0.15s',
+  opacity: 0.9,
+  transition: 'color 0.15s',
 };

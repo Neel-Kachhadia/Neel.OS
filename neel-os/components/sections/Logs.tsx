@@ -64,6 +64,35 @@ const LOGS: Record<LogFile, string> = {
   shipping: SHIPPING_LOG,
 };
 
+function lineColor(line: string): string {
+  if (line.startsWith('[FAIL]')) return '#B45309';
+  if (line.startsWith('[FIX]'))  return '#4AFF91';
+  if (line.startsWith('[LEARNED]')) return 'rgba(245,240,232,0.6)';
+  return 'rgba(245,240,232,0.35)';
+}
+
+function FailuresLog({ content }: { content: string }) {
+  const lines = content.split('\n');
+  return (
+    <pre
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: '13px',
+        lineHeight: 1.6,
+        whiteSpace: 'pre-wrap',
+        maxWidth: '760px',
+        margin: 0,
+      }}
+    >
+      {lines.map((line, i) => (
+        <div key={i} style={{ color: lineColor(line) }}>
+          {line || ' '}
+        </div>
+      ))}
+    </pre>
+  );
+}
+
 export default function Logs() {
   const [active, setActive] = useState<LogFile>('failures');
 
@@ -124,18 +153,23 @@ export default function Logs() {
         cat /neel/logs/{active}.log
       </div>
 
-      <pre
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: '13px',
-          lineHeight: 1.6,
-          color: active === 'failures' ? 'var(--text-on-black)' : 'var(--text-mono-dark)',
-          whiteSpace: 'pre-wrap',
-          maxWidth: '760px',
-        }}
-      >
-        {LOGS[active]}
-      </pre>
+      {active === 'failures' ? (
+        <FailuresLog content={LOGS[active]} />
+      ) : (
+        <pre
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            lineHeight: 1.6,
+            color: 'var(--text-mono-dark)',
+            whiteSpace: 'pre-wrap',
+            maxWidth: '760px',
+            margin: 0,
+          }}
+        >
+          {LOGS[active]}
+        </pre>
+      )}
 
       {active === 'failures' && (
         <div

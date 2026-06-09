@@ -50,6 +50,7 @@ export default function NeuroFin() {
     <section
       id="neurofin"
       ref={sectionRef}
+      data-cursor-accent="#B45309"
       style={{
         background: 'var(--black)',
         minHeight: '100vh',
@@ -87,7 +88,7 @@ export default function NeuroFin() {
           <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />
         )}
 
-        {shellDone && (
+        {shellDone && resolved && (
           <div style={{ marginTop: '40px' }}>
             {/* Project description */}
             <div

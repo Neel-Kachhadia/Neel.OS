@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useMotionProfile } from '@/hooks/useMotionProfile';
 
 export default function Grain() {
+  const motionProfile = useMotionProfile();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const lastRef = useRef<number>(0);
 
   useEffect(() => {
+    if (motionProfile === 'static') return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
@@ -43,7 +47,9 @@ export default function Grain() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [motionProfile]);
+
+  if (motionProfile === 'static') return null;
 
   return (
     <canvas
@@ -53,7 +59,7 @@ export default function Grain() {
         inset: 0,
         pointerEvents: 'none',
         zIndex: 9999,
-        opacity: 0.025,
+        opacity: motionProfile === 'reduced' ? 0.015 : 0.025,
       }}
     />
   );

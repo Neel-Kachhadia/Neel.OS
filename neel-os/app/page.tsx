@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Session, initSession, updateSession } from '@/lib/session';
+import { getLenis } from '@/lib/lenis';
 import { Mode } from '@/hooks/useMode';
+import { MotionProfile, useMotionProfile, setMotionOverride } from '@/hooks/useMotionProfile';
 
 import LenisProvider from '@/components/core/LenisProvider';
 import Grain from '@/components/core/Grain';
@@ -24,34 +26,47 @@ import Logs from '@/components/sections/Logs';
 import Stack from '@/components/sections/Stack';
 import AskNeel from '@/components/sections/AskNeel';
 import Whispers from '@/components/sections/Whispers';
+import Capabilities from '@/components/sections/Capabilities';
+import Transmission from '@/components/sections/Transmission';
 import NeuroFin from '@/components/sections/Projects/NeuroFin';
 import Equity from '@/components/sections/Projects/Equity';
 import MarketTerminal from '@/components/sections/Projects/MarketTerminal';
+import RecruiterPanel from '@/components/modes/RecruiterPanel';
+import DebugOverlay from '@/components/modes/DebugOverlay';
 
-const Cursor = dynamic(() => import('@/components/core/Cursor'), { ssr: false });
+const Cursor      = dynamic(() => import('@/components/core/Cursor'),        { ssr: false });
+const PocketShell = dynamic(() => import('@/components/mobile/PocketShell'), { ssr: false });
 
 type AppState = 'booting' | 'hero';
 
 export default function Home() {
-  // Lazy initializer: runs synchronously on the client so Boot renders on the
-  // very first frame (no useEffect delay = no blank black screen).
-  // Returns null on the server (SSR pre-render); client always has a Session.
+  // session init must happen first — it increments count in localStorage
   const [session] = useState<Session | null>(() => {
     if (typeof window === 'undefined') return null;
     return initSession();
   });
 
-  const [appState, setAppState] = useState<AppState>('booting');
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(
-    () => session?.soundEnabled ?? false
-  );
-  const [mode, setMode] = useState<Mode>(
-    () => (session?.mode as Mode) ?? 'visitor'
-  );
-  const [currentPath, setCurrentPath] = useState<string>(
-    () => session?.lastPath ?? '/neel'
-  );
-  const [isBooting, setIsBooting] = useState(true);
+  // After initSession() ran, read the updated count to decide start state
+  const isReturnVisit = session ? session.count > 1 : false;
+
+  const [appState, setAppState]           = useState<AppState>(isReturnVisit ? 'hero' : 'booting');
+  const [soundEnabled, setSoundEnabled]   = useState<boolean>(() => session?.soundEnabled ?? false);
+  const [mode, setMode]                   = useState<Mode>(() => (session?.mode as Mode) ?? 'visitor');
+  const [currentPath, setCurrentPath]     = useState<string>(() => session?.lastPath ?? '/neel');
+  const [isBooting, setIsBooting]         = useState(!isReturnVisit);
+  const [isMobile, setIsMobile]           = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(isReturnVisit);
+
+  // motionProfile — driven by useMotionProfile hook (localStorage + OS media query + manual)
+  const motionProfile = useMotionProfile();
+
+  // Detect mobile
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const handleBootComplete = (sound: boolean) => {
     setSoundEnabled(sound);
@@ -65,18 +80,64 @@ export default function Home() {
     updateSession({ mode: m });
   };
 
+  const handleMotionChange = (p: MotionProfile) => {
+    setMotionOverride(p);
+    updateSession({ motionProfile: p });
+  };
+
   const handleNavigate = (path: string) => {
     setCurrentPath(path);
     updateSession({ lastPath: path });
   };
 
-  // null only during SSR — client always exits here with a valid session
+  const handleResumeYes = useCallback(() => {
+    setShowResumePrompt(false);
+    const lastPath = session?.lastPath;
+    if (lastPath && lastPath !== '/neel') {
+      handleNavigate(lastPath);
+      requestAnimationFrame(() => {
+        const section = lastPath.split('/').pop();
+        const el = document.querySelector(`#${section}`);
+        if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.2 });
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.lastPath]);
+
+  const handleRecruiterTransmission = useCallback(() => {
+    handleModeChange('visitor');
+    setTimeout(() => {
+      const el = document.querySelector('#transmission');
+      if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.2 });
+    }, 150);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!session) return null;
+
+  // Mobile: completely different component tree
+  if (isMobile) {
+    return <PocketShell session={session} />;
+  }
+
+  // Recruiter mode: fast overlay, bypass boot
+  if (mode === 'recruiter') {
+    return (
+      <>
+        <Grain />
+        <Cursor />
+        <RecruiterPanel
+          onClose={() => handleModeChange('visitor')}
+          onTransmission={handleRecruiterTransmission}
+        />
+      </>
+    );
+  }
 
   return (
     <LenisProvider>
       <Grain />
-      <ScanLine booting={isBooting} />
+      {motionProfile === 'full' && <ScanLine booting={isBooting} />}
       <Cursor />
 
       {appState === 'hero' && <Tear soundEnabled={soundEnabled} />}
@@ -89,13 +150,87 @@ export default function Home() {
           <SystemHealth
             sessionCount={session.count}
             soundEnabled={soundEnabled}
-            motionProfile={session.motionProfile}
+            motionProfile={motionProfile}
           />
           <CommandTerminal
             onNavigate={handleNavigate}
             onModeChange={handleModeChange}
             currentPath={currentPath}
           />
+
+          {/* Motion profile toggle */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              left: '24px',
+              zIndex: 30,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9px',
+              color: 'var(--text-on-black)',
+              display: 'flex',
+              gap: '8px',
+              opacity: 0.4,
+            }}
+          >
+            {(['full', 'reduced', 'static'] as MotionProfile[]).map(p => (
+              <button
+                key={p}
+                onClick={() => handleMotionChange(p)}
+                data-cursor-hover
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'inherit',
+                  fontFamily: 'inherit',
+                  fontSize: 'inherit',
+                  padding: 0,
+                  cursor: 'pointer',
+                  opacity: motionProfile === p ? 1 : 0.5,
+                  textDecoration: motionProfile === p ? 'underline' : 'none',
+                  textUnderlineOffset: '3px',
+                  transition: 'opacity 0.15s',
+                }}
+              >
+                [{p}]
+              </button>
+            ))}
+          </div>
+
+          {/* Return visit resume prompt — shows on hero */}
+          {showResumePrompt && (
+            <div
+              style={{
+                position: 'fixed',
+                bottom: '56px',
+                left: 'calc(200px + clamp(24px, 5vw, 80px))',
+                zIndex: 35,
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                color: 'var(--text-on-black)',
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'center',
+                opacity: 0.8,
+              }}
+            >
+              <span>Resume previous session?</span>
+              <button
+                onClick={handleResumeYes}
+                data-cursor-hover
+                style={resumeBtnStyle}
+              >
+                [yes]
+              </button>
+              <button
+                onClick={() => setShowResumePrompt(false)}
+                data-cursor-hover
+                style={resumeBtnStyle}
+              >
+                [no]
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -116,13 +251,38 @@ export default function Home() {
           </section>
           <Identity />
           <Logs />
-          <section id="logs-whispers" style={{ background: 'var(--black)', padding: '0 calc(200px + var(--section-pad-x)) var(--section-pad-y)', paddingRight: 'var(--section-pad-x)' }}>
+          <section
+            id="logs-whispers"
+            style={{
+              background: 'var(--black)',
+              padding: '0 var(--section-pad-x) var(--section-pad-y)',
+              paddingLeft: 'calc(200px + var(--section-pad-x))',
+            }}
+          >
             <Whispers />
           </section>
           <Stack />
+          <Capabilities />
           <AskNeel />
+          <Transmission />
         </main>
+      )}
+
+      {mode === 'debug' && appState === 'hero' && (
+        <DebugOverlay currentPath={currentPath} motionProfile={motionProfile} />
       )}
     </LenisProvider>
   );
 }
+
+const resumeBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  fontFamily: 'var(--font-mono)',
+  fontSize: '12px',
+  color: 'var(--text-on-black)',
+  padding: 0,
+  opacity: 0.8,
+  transition: 'opacity 0.15s',
+};

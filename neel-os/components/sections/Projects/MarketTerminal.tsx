@@ -45,6 +45,7 @@ export default function MarketTerminal() {
   return (
     <section
       id="market"
+      data-cursor-accent="#003D2E"
       style={{
         background: 'var(--terminal-bg)',
         minHeight: '100vh',

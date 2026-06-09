@@ -31,6 +31,8 @@ export default function ModeSwitcher({ mode, onChange }: ModeSwitcherProps) {
         <button
           key={m}
           onClick={() => onChange(m)}
+          aria-label={`Switch to ${m} mode`}
+          aria-pressed={mode === m}
           data-cursor-hover
           style={{
             background: 'none',

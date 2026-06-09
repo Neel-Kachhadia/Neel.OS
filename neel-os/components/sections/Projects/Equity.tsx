@@ -36,6 +36,7 @@ export default function Equity() {
   return (
     <section
       id="equity"
+      data-cursor-accent="#1E3A5F"
       style={{
         background: 'var(--cold-blue)',
         minHeight: '100vh',

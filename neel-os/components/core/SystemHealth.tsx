@@ -18,6 +18,7 @@ export default function SystemHealth({
   const [fps, setFps] = useState(60);
   const [heap, setHeap] = useState('--');
   const [uptime, setUptime] = useState('00:00:00');
+  const [atTransmission, setAtTransmission] = useState(false);
   const frameTimesRef = useRef<number[]>([]);
   const pageLoadRef = useRef(Date.now());
   const rafRef = useRef<number>(0);
@@ -60,6 +61,18 @@ export default function SystemHealth({
     };
   }, []);
 
+  // Detect when transmission section enters viewport
+  useEffect(() => {
+    const el = document.querySelector('#transmission');
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setAtTransmission(entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <div
       style={{
@@ -84,16 +97,23 @@ export default function SystemHealth({
       <Row label="uptime" value={uptime} />
       <Row label="audio" value={soundEnabled ? 'enabled' : 'muted'} />
       <Row label="motion" value={motionProfile} />
-      <Row label="session" value={String(sessionCount).padStart(2, '0')} />
+      {atTransmission ? (
+        <>
+          <Row label="transmission" value="listening" vColor="var(--online)" />
+          <Row label="contact" value="open" vColor="var(--online)" />
+        </>
+      ) : (
+        <Row label="session" value={String(sessionCount).padStart(2, '0')} />
+      )}
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, vColor }: { label: string; value: string; vColor?: string }) {
   return (
     <div style={{ display: 'flex', gap: '8px' }}>
-      <span style={{ opacity: 0.6, minWidth: '48px' }}>{label}</span>
-      <span>{value}</span>
+      <span style={{ opacity: 0.6, minWidth: '64px' }}>{label}</span>
+      <span style={{ color: vColor }}>{value}</span>
     </div>
   );
 }
