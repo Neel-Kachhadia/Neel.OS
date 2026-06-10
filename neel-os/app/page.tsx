@@ -56,7 +56,7 @@ export default function Home() {
     const s = initSession();
     setSession(s);
     setAppState('booting');
-    setSoundEnabled(s.soundEnabled ?? false);
+    setSoundEnabled(false); // soundEnabled never persisted — always starts false
     setMode((s.mode as Mode) ?? 'visitor');
     setCurrentPath(s.lastPath ?? '/neel');
     setIsBooting(true);
@@ -86,7 +86,7 @@ export default function Home() {
     const nextPath = resumePrevious ? (session?.lastPath ?? '/neel') : '/neel';
     setSoundEnabled(sound);
     setCurrentPath(nextPath);
-    updateSession({ soundEnabled: sound, lastPath: nextPath });
+    updateSession({ lastPath: nextPath }); // soundEnabled not persisted
     setIsBooting(false);
     setAppState('hero');
     if (resumePrevious && nextPath !== '/neel') {

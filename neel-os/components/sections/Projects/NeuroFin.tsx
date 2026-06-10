@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
-import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
-const ResolveShader = dynamic(() => import('@/components/webgl/ResolveShader'), { ssr: false });
+const AgentTrace = dynamic(() => import('./AgentTrace'), { ssr: false, loading: () => null });
 
 const RUN_LINES = [
   'root@neel:/projects$ run neurofin --case-study',
@@ -37,20 +36,13 @@ interface NeuroFinProps {
 }
 
 export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
-  const [phase, setPhase] = useState<'shell' | 'case-study'>('shell');
-  const [shellDone, setShellDone] = useState(false);
-  const [resolved, setResolved] = useState(false);
+  const [shellDone,    setShellDone]    = useState(false);
   const [shaderActive, setShaderActive] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const motionProfile = useMotionProfile();
-  const shaderResolved = motionProfile === 'static' || resolved;
 
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([entry]) => {
-        setShaderActive(entry.isIntersecting);
-        if (entry.isIntersecting) setPhase('shell');
-      },
+      ([entry]) => setShaderActive(entry.isIntersecting),
       { rootMargin: '700px 0px', threshold: 0.01 }
     );
     if (sectionRef.current) obs.observe(sectionRef.current);
@@ -69,16 +61,10 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
         flexDirection: 'column',
       }}
     >
-      {/* Shader world */}
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' || !shaderActive ? (
-          <StaticProjectWorld variant="neurofin" />
-        ) : (
-          <ResolveShader autoPlay onResolved={() => setResolved(true)} />
-        )}
+        <AgentTrace isActive={shaderActive} />
       </div>
 
-      {/* Case study content */}
       <div
         style={{
           padding: 'var(--section-pad-y) calc(200px + var(--section-pad-x))',
@@ -99,13 +85,10 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
           <DecryptText text="NEUROFIN" soundEnabled={soundEnabled} />
         </div>
 
-        {phase === 'shell' && (
-          <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />
-        )}
+        <ProjectShell lines={RUN_LINES} onComplete={() => setShellDone(true)} />
 
-        {shellDone && shaderResolved && (
+        {shellDone && (
           <div style={{ marginTop: '40px' }}>
-            {/* Project description */}
             <div
               style={{
                 fontFamily: 'var(--font-body)',
@@ -122,7 +105,6 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
               Sub-200ms latency under concurrent load.
             </div>
 
-            {/* Stack tags */}
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -140,7 +122,6 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
               ))}
             </div>
 
-            {/* Git log */}
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -168,22 +149,5 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
         )}
       </div>
     </section>
-  );
-}
-
-function StaticProjectWorld({ variant }: { variant: 'neurofin' }) {
-  const background = variant === 'neurofin'
-    ? 'linear-gradient(180deg, var(--black) 0%, var(--amber) 100%)'
-    : 'var(--black)';
-
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: '100%',
-        height: '100%',
-        background,
-      }}
-    />
   );
 }

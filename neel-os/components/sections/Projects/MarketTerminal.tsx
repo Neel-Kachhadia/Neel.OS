@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
-import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
-const TerminalShader = dynamic(() => import('@/components/webgl/TerminalShader'), { ssr: false });
+const LiveTicker = dynamic(() => import('./LiveTicker'), { ssr: false, loading: () => null });
 
 const RUN_LINES = [
   'root@neel:/projects$ run market-terminal --case-study',
@@ -31,10 +30,10 @@ const GIT_LOG = [
 ];
 
 const BUILD_MANIFEST = [
-  { label: 'RUST CORE',      done: true },
-  { label: 'FASTAPI LAYER',  done: true },
-  { label: 'REDIS PIPELINE', done: true },
-  { label: 'DUCKDB SCHEMA',  done: true },
+  { label: 'RUST CORE',      done: true  },
+  { label: 'FASTAPI LAYER',  done: true  },
+  { label: 'REDIS PIPELINE', done: true  },
+  { label: 'DUCKDB SCHEMA',  done: true  },
   { label: 'OPTIONS ENGINE', done: false },
   { label: 'IV SURFACE',     done: false },
   { label: 'TAURI SHELL',    done: false },
@@ -46,25 +45,10 @@ interface MarketTerminalProps {
 
 export default function MarketTerminal({ soundEnabled = false }: MarketTerminalProps) {
   const [shellDone, setShellDone] = useState(false);
-  const [shaderActive, setShaderActive] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-  const motionProfile = useMotionProfile();
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setShaderActive(entry.isIntersecting),
-      { rootMargin: '700px 0px', threshold: 0.01 }
-    );
-    obs.observe(section);
-    return () => obs.disconnect();
-  }, []);
 
   return (
     <section
       id="market"
-      ref={sectionRef}
       data-cursor-accent="#003D2E"
       style={{
         background: 'var(--terminal-bg)',
@@ -75,13 +59,9 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' || !shaderActive ? (
-          <StaticProjectWorld />
-        ) : (
-          <TerminalShader />
-        )}
+        <LiveTicker />
 
-        {/* Build manifest overlay — HTML, not shader */}
+        {/* Build manifest overlay */}
         <div
           style={{
             position: 'absolute',
@@ -91,6 +71,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
             fontSize: '9px',
             lineHeight: 1.8,
             color: 'var(--phosphor)',
+            pointerEvents: 'none',
           }}
         >
           <div style={{ opacity: 0.6, marginBottom: '4px' }}>████████████████████░░░░░  70%</div>
@@ -169,18 +150,5 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         )}
       </div>
     </section>
-  );
-}
-
-function StaticProjectWorld() {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: '100%',
-        height: '100%',
-        background: 'linear-gradient(180deg, var(--black) 0%, var(--terminal-bg) 100%)',
-      }}
-    />
   );
 }

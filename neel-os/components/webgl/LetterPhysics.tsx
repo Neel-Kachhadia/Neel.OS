@@ -88,12 +88,22 @@ export default function LetterPhysics({ mouseVelocity }: LetterPhysicsProps) {
       bodies.current.push(body);
     });
 
+    let last = performance.now();
+    const tickRef: { current: ((now: number) => void) | null } = { current: null };
+    let physicsSleeping = false;
+    let settledFrames = 0;
+
     const onMouse = (e: MouseEvent) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
+      if (physicsSleeping && mouseVelRef.current > 1) {
+        physicsSleeping = false;
+        settledFrames = 0;
+        last = performance.now();
+        animRef.current = requestAnimationFrame(tickRef.current!);
+      }
     };
     window.addEventListener('mousemove', onMouse);
 
-    let last = performance.now();
     const tick = (now: number) => {
       animRef.current = requestAnimationFrame(tick);
       const dt = Math.min((now - last) / 1000, 0.033);
@@ -106,7 +116,7 @@ export default function LetterPhysics({ mouseVelocity }: LetterPhysicsProps) {
       const my = -(mousePos.current.y - window.innerHeight / 2);
       const force = mouseVelRef.current * 60;
 
-      bodies.current.forEach((body, i) => {
+      bodies.current.forEach((body) => {
         const bx = body.position.x;
         const by = body.position.y;
         const dx = bx - mx;
@@ -120,13 +130,6 @@ export default function LetterPhysics({ mouseVelocity }: LetterPhysicsProps) {
             new CANNON.Vec3(0, 0, 0)
           );
         }
-
-        // Subtle oscillation when settled
-        const speed = body.velocity.length();
-        if (speed < 0.5) {
-          const osc = Math.sin(now * 0.0005 + i * 0.7) * 0.2;
-          body.applyForce(new CANNON.Vec3(0, osc, 0), new CANNON.Vec3(0, 0, 0));
-        }
       });
 
       // Sync DOM
@@ -138,11 +141,25 @@ export default function LetterPhysics({ mouseVelocity }: LetterPhysicsProps) {
         if (!el) return;
         const x = body.position.x + cx;
         const y = cy - body.position.y;
-        const angle = body.quaternion.z * 2; // extract Z rotation approximation
+        const angle = body.quaternion.z * 2;
         el.style.transform = `translate(${x}px, ${y}px) rotate(${angle}rad) translate(-50%, -50%)`;
       });
-    };
 
+      // Physics sleep: stop rAF after all bodies settle
+      const allSettled = bodies.current.every(b =>
+        b.velocity.length() < 0.1 && b.angularVelocity.length() < 0.1
+      );
+      if (allSettled) {
+        settledFrames++;
+        if (settledFrames > 30) {
+          cancelAnimationFrame(animRef.current);
+          physicsSleeping = true;
+        }
+      } else {
+        settledFrames = 0;
+      }
+    };
+    tickRef.current = tick;
     animRef.current = requestAnimationFrame(tick);
 
     return () => {

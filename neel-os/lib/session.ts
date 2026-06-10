@@ -34,6 +34,7 @@ export function initSession(): Session {
       ...existing,
       count: existing.count + 1,
       lastVisit: Date.now(),
+      soundEnabled: false, // never persisted — reset every session
     };
     saveSession(updated);
     return updated;

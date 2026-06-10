@@ -9,7 +9,9 @@ interface BootProps {
   onComplete: (soundEnabled: boolean, resumePrevious?: boolean) => void;
 }
 
-const BOOT_LINES = [
+type BootPhase = 'first-boot' | 'return-boot' | 'return-gate' | 'fresh-boot' | 'sound-gate';
+
+const BOOT_LINE_TEMPLATES = [
   { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
   { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
   { key: 'l0',     text: '[    {t+0.000}] Initializing cgroup subsys cpuset' },
@@ -26,7 +28,7 @@ const BOOT_LINES = [
   { key: 'pass',   text: 'Password: ████████' },
   { key: 'blank',  text: '' },
   { key: 'welcome',text: 'Welcome. Last login: never.' },
-  { key: 'session',text: 'Session 01.' },
+  { key: 'session',text: 'Session {count}.' },
   { key: 'sep3',   text: '──────────────────────────────────────────────────────────' },
   { key: 'readme', text: '' },
   { key: 'rm1',    text: 'This is NEEL.OS.' },
@@ -35,14 +37,39 @@ const BOOT_LINES = [
   { key: 'rm4',    text: 'Use the filesystem to inspect projects,' },
   { key: 'rm5',    text: 'stack, logs, and transmission.' },
   { key: 'rm6',    text: '' },
-  { key: 'rm7',    text: "Type help anytime." },
+  { key: 'rm7',    text: 'Type help anytime.' },
 ];
 
+function getFirstBootLines(count: number) {
+  const pad = String(count).padStart(2, '0');
+  return BOOT_LINE_TEMPLATES.map(l =>
+    l.key === 'session' ? { ...l, text: `Session ${pad}.` } : l
+  );
+}
+
+function getReturnLines(session: Session) {
+  return [
+    { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
+    { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
+    { key: 'cache',  text: 'Session restored from cache.' },
+    { key: 'sep2',   text: '──────────────────────────────────────────────────────────' },
+    { key: 'blank1', text: '' },
+    { key: 'welcome',text: 'Welcome back, visitor.' },
+    { key: 'last',   text: `Last session: ${session.lastPath || '/neel'}` },
+    { key: 'count',  text: `Session ${String(session.count).padStart(2, '0')}.` },
+    { key: 'blank2', text: '' },
+    { key: 'prompt', text: 'Resume previous session?' },
+    { key: 'sep3',   text: '──────────────────────────────────────────────────────────' },
+  ];
+}
+
 export default function Boot({ session, onComplete }: BootProps) {
-  const [lines, setLines] = useState<string[]>([]);
-  const [showGate, setShowGate] = useState(false);
-  const startRef = useRef(performance.now());
   const isReturnVisit = session.count > 1;
+  const [phase, setPhase] = useState<BootPhase>(isReturnVisit ? 'return-boot' : 'first-boot');
+  const [lines, setLines] = useState<string[]>([]);
+  const [printing, setPrinting] = useState(true);
+  const resumeRef  = useRef(true);
+  const startRef   = useRef(performance.now());
 
   const formatLine = (text: string): string => {
     const t = ((performance.now() - startRef.current) / 1000).toFixed(3);
@@ -52,7 +79,6 @@ export default function Boot({ session, onComplete }: BootProps) {
   const renderLine = (line: string) => {
     const okIndex = line.indexOf('[OK]');
     if (okIndex === -1) return line || ' ';
-
     return (
       <>
         {line.slice(0, okIndex)}
@@ -63,21 +89,48 @@ export default function Boot({ session, onComplete }: BootProps) {
   };
 
   useEffect(() => {
+    const isPrinting = phase === 'first-boot' || phase === 'return-boot' || phase === 'fresh-boot';
+    if (!isPrinting) return;
+
+    if (phase === 'fresh-boot') {
+      startRef.current = performance.now();
+    }
+
+    setLines([]);
+    setPrinting(true);
+
+    const source = phase === 'return-boot'
+      ? getReturnLines(session)
+      : getFirstBootLines(session.count);
+
     let i = 0;
-    const source = isReturnVisit ? getReturnLines(session) : BOOT_LINES;
     const interval = setInterval(() => {
       if (i < source.length) {
-        const text = source[i].text;
-        setLines(prev => [...prev, formatLine(text)]);
+        setLines(prev => [...prev, formatLine(source[i].text)]);
         i++;
       } else {
         clearInterval(interval);
-        setTimeout(() => setShowGate(true), isReturnVisit ? 450 : 800);
+        setPrinting(false);
+        const delay = phase === 'return-boot' ? 450 : 800;
+        setTimeout(() => {
+          setPhase(phase === 'return-boot' ? 'return-gate' : 'sound-gate');
+        }, delay);
       }
     }, 90);
 
     return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleReturnChoice = (resume: boolean) => {
+    resumeRef.current = resume;
+    setPhase(resume ? 'sound-gate' : 'fresh-boot');
+  };
+
+  const handleSoundChoice = (sound: boolean) => {
+    onComplete(sound, resumeRef.current);
+  };
+
+  const showCursor = printing && phase !== 'return-gate' && phase !== 'sound-gate';
 
   return (
     <div
@@ -107,7 +160,7 @@ export default function Boot({ session, onComplete }: BootProps) {
         {lines.map((line, i) => (
           <div key={i}>{renderLine(line)}</div>
         ))}
-        {!showGate && (
+        {showCursor && (
           <span
             style={{
               display: 'inline-block',
@@ -121,15 +174,12 @@ export default function Boot({ session, onComplete }: BootProps) {
         )}
       </pre>
 
-      {showGate && !isReturnVisit && (
-        <SoundGate onChoice={(enabled) => onComplete(enabled, true)} />
+      {phase === 'return-gate' && (
+        <ReturnGate onChoice={handleReturnChoice} />
       )}
 
-      {showGate && isReturnVisit && (
-        <ReturnGate
-          soundEnabled={session.soundEnabled}
-          onChoice={(resumePrevious) => onComplete(session.soundEnabled, resumePrevious)}
-        />
+      {phase === 'sound-gate' && (
+        <SoundGate onChoice={handleSoundChoice} />
       )}
 
       <style>{`
@@ -140,22 +190,6 @@ export default function Boot({ session, onComplete }: BootProps) {
       `}</style>
     </div>
   );
-}
-
-function getReturnLines(session: Session) {
-  return [
-    { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
-    { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
-    { key: 'cache',  text: 'Session restored from cache.' },
-    { key: 'sep2',   text: '──────────────────────────────────────────────────────────' },
-    { key: 'blank1', text: '' },
-    { key: 'welcome',text: 'Welcome back, visitor.' },
-    { key: 'last',   text: `Last session: ${session.lastPath || '/neel'}` },
-    { key: 'count',  text: `Session ${String(session.count).padStart(2, '0')}.` },
-    { key: 'blank2', text: '' },
-    { key: 'prompt', text: `Resume previous session?` },
-    { key: 'sep3',   text: '──────────────────────────────────────────────────────────' },
-  ];
 }
 
 function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
@@ -207,23 +241,13 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
   );
 }
 
-function ReturnGate({
-  soundEnabled,
-  onChoice,
-}: {
-  soundEnabled: boolean;
-  onChoice: (resumePrevious: boolean) => void;
-}) {
+function ReturnGate({ onChoice }: { onChoice: (resume: boolean) => void }) {
   const [chosen, setChosen] = useState<'yes' | 'fresh' | null>(null);
 
-  const handleChoice = async (resumePrevious: boolean) => {
+  const handleChoice = (resume: boolean) => {
     if (chosen !== null) return;
-    setChosen(resumePrevious ? 'yes' : 'fresh');
-    if (soundEnabled) {
-      const ready = await resumeSystemAudio();
-      if (ready) playBootChime();
-    }
-    setTimeout(() => onChoice(resumePrevious), 260);
+    setChosen(resume ? 'yes' : 'fresh');
+    setTimeout(() => onChoice(resume), 260);
   };
 
   return (

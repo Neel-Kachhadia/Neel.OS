@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
-import { useMotionProfile } from '@/hooks/useMotionProfile';
 import ProjectShell from './ProjectShell';
 
-const ThesisShader = dynamic(() => import('@/components/webgl/ThesisShader'), { ssr: false });
+const ThesisConstruction = dynamic(() => import('./ThesisConstruction'), { ssr: false, loading: () => null });
 
 const RUN_LINES = [
   'root@neel:/projects$ run equity-research --case-study',
@@ -36,10 +35,9 @@ interface EquityProps {
 }
 
 export default function Equity({ soundEnabled = false }: EquityProps) {
-  const [shellDone, setShellDone] = useState(false);
+  const [shellDone,    setShellDone]    = useState(false);
   const [shaderActive, setShaderActive] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const motionProfile = useMotionProfile();
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -65,11 +63,7 @@ export default function Equity({ soundEnabled = false }: EquityProps) {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        {motionProfile === 'static' || !shaderActive ? (
-          <StaticProjectWorld />
-        ) : (
-          <ThesisShader autoPlay soundEnabled={soundEnabled} />
-        )}
+        <ThesisConstruction isActive={shaderActive} />
       </div>
 
       <div
@@ -139,18 +133,5 @@ export default function Equity({ soundEnabled = false }: EquityProps) {
         )}
       </div>
     </section>
-  );
-}
-
-function StaticProjectWorld() {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: '100%',
-        height: '100%',
-        background: 'linear-gradient(180deg, var(--black) 0%, var(--cold-blue) 100%)',
-      }}
-    />
   );
 }
