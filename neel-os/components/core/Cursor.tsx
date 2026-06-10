@@ -76,7 +76,7 @@ export default function Cursor() {
 
       // Void pulse: 1.0→1.08 on 2s sine when no interaction
       const voidPulse = !isHover.current
-        ? 1 + Math.sin((now / 2000) * Math.PI * 2) * 0.04
+        ? 1 + ((Math.sin((now / 2000) * Math.PI * 2) + 1) / 2) * 0.08
         : 1;
 
       angle.current += (rpmRef.current / 60) * 2 * Math.PI * (dt / 1000);

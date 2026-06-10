@@ -56,8 +56,8 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
 
         <Section label="STACK">
           <div style={{ opacity: 0.7, lineHeight: 1.8 }}>
-            Python · React · LangGraph · FastAPI · TypeScript<br />
-            Next.js · AWS · Three.js · Rust · PostgreSQL
+            Python · React · LangGraph · FastAPI<br />
+            TypeScript · Next.js · AWS · Three.js · Rust
           </div>
         </Section>
 
@@ -71,11 +71,7 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
               title="Mumbai Hacks 2024"
               detail="Shipped AI product · 3,000+ participants · 300+ teams"
             />
-            <Achievement
-              title="Odoo Hackathon"
-              detail="ERP feature suite · end-to-end delivery"
-            />
-          </div>
+            </div>
         </Section>
 
         <div
@@ -87,6 +83,7 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
             flexWrap: 'wrap',
           }}
         >
+          <Link href="/resume.pdf" label="RESUME.PDF" download />
           <Link href="https://github.com/Neel-Kachhadia" label="GITHUB" />
           <Link href="https://linkedin.com/in/neelkachhadia" label="LINKEDIN" />
           {onTransmission && (
@@ -188,12 +185,13 @@ function Achievement({ title, detail }: { title: string; detail: string }) {
   );
 }
 
-function Link({ href, label }: { href: string; label: string }) {
+function Link({ href, label, download }: { href: string; label: string; download?: boolean }) {
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={download ? '_self' : '_blank'}
+      rel={download ? undefined : 'noopener noreferrer'}
+      download={download ? true : undefined}
       data-cursor-hover
       style={{
         color: 'var(--text-on-black)',

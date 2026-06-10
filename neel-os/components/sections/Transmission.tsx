@@ -217,7 +217,7 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
         data-cursor-copy
         style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(24px, 5vw, 72px)',
+          fontSize: 'clamp(32px, 6vw, 80px)',
           fontWeight: 300,
           color: 'var(--text-on-black)',
           letterSpacing: '-0.02em',
@@ -259,8 +259,8 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
       {/* Tagline */}
       <div
         style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: '18px',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '13px',
           color: 'var(--text-on-black)',
           opacity: 0.7,
         }}

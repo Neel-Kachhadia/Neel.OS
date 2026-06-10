@@ -18,7 +18,7 @@ export default function SystemHealth({
   const [fps, setFps] = useState(60);
   const [heap, setHeap] = useState('--');
   const [uptime, setUptime] = useState('00:00:00');
-  const [atTransmission, setAtTransmission] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const frameTimesRef = useRef<number[]>([]);
   const pageLoadRef = useRef(Date.now());
   const rafRef = useRef<number>(0);
@@ -61,16 +61,26 @@ export default function SystemHealth({
     };
   }, []);
 
-  // Detect when transmission section enters viewport
+  // Detect active section for section-aware status lines
   useEffect(() => {
-    const el = document.querySelector('#transmission');
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setAtTransmission(entry.isIntersecting),
-      { threshold: 0.3 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    const SECTIONS = ['transmission', 'neurofin', 'equity', 'market'];
+    const observers: IntersectionObserver[] = [];
+
+    SECTIONS.forEach(id => {
+      const el = document.querySelector(`#${id}`);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(id);
+          else setActiveSection(prev => prev === id ? null : prev);
+        },
+        { threshold: 0.3 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach(o => o.disconnect());
   }, []);
 
   return (
@@ -97,10 +107,25 @@ export default function SystemHealth({
       <Row label="uptime" value={uptime} />
       <Row label="audio" value={soundEnabled ? 'enabled' : 'muted'} />
       <Row label="motion" value={motionProfile} />
-      {atTransmission ? (
+      {activeSection === 'transmission' ? (
         <>
           <Row label="transmission" value="listening" vColor="var(--online)" />
           <Row label="contact" value="open" vColor="var(--online)" />
+        </>
+      ) : activeSection === 'neurofin' ? (
+        <>
+          <Row label="project-runtime" value="active" vColor="var(--online)" />
+          <Row label="case-study" value="mounted" vColor="var(--online)" />
+        </>
+      ) : activeSection === 'equity' ? (
+        <>
+          <Row label="project-runtime" value="active" vColor="var(--online)" />
+          <Row label="thesis-shader" value="running" vColor="var(--online)" />
+        </>
+      ) : activeSection === 'market' ? (
+        <>
+          <Row label="project-runtime" value="active" vColor="var(--online)" />
+          <Row label="terminal" value="live" vColor="var(--online)" />
         </>
       ) : (
         <Row label="session" value={String(sessionCount).padStart(2, '0')} />

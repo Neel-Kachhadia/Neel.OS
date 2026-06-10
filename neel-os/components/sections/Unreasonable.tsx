@@ -10,10 +10,9 @@ export default function Unreasonable() {
     const el = wordRef.current;
     if (!el) return;
 
-    gsap.set(el, { scale: 0.94, opacity: 0 });
+    gsap.set(el, { scale: 0.94 });
     gsap.to(el, {
       scale: 1.0,
-      opacity: 1,
       duration: 1.0,
       ease: 'power3.out',
       scrollTrigger: {

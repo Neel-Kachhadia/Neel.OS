@@ -19,6 +19,7 @@ export default function Tear({ soundEnabled = false }: TearProps) {
   const motionProfile = useMotionProfile();
   const [tearProgress, setTearProgress] = useState(0);
   const tearing = useRef(false);
+  const hasTorn = useRef(false); // once torn, never re-triggers
   const progressRef = useRef(0);
 
   useEffect(() => {
@@ -34,8 +35,9 @@ export default function Tear({ soundEnabled = false }: TearProps) {
       // Pre-tear anticipation (30–40px range)
       // Actual tear > 40px
 
-      if (!tearing.current && delta > THRESHOLD) {
+      if (!tearing.current && !hasTorn.current && delta > THRESHOLD) {
         tearing.current = true;
+        hasTorn.current = true; // permanent — never re-triggers
         progressRef.current = 0;
 
         gsap.to(progressRef, {
