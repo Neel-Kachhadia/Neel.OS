@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
 import ProjectShell from './ProjectShell';
+const GlobalTaxCalculator = dynamic(() => import('./GlobalTaxCalculator'), { ssr: false, loading: () => null });
 
 const AgentTrace = dynamic(() => import('./AgentTrace'), { ssr: false, loading: () => null });
 
@@ -122,6 +123,11 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
               ))}
             </div>
 
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--amber)', opacity: 0.6, letterSpacing: '0.12em', marginBottom: '0' }}>
+              TRY IT  ·  TAX CALCULATOR
+            </div>
+            <GlobalTaxCalculator />
+
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -129,6 +135,7 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
                 color: 'var(--text-mono-dark)',
                 opacity: 0.5,
                 marginBottom: '8px',
+                marginTop: '48px',
               }}
             >
               git log --project neurofin

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
 import ProjectShell from './ProjectShell';
+const PriceChart = dynamic(() => import('./PriceChart'), { ssr: false, loading: () => null });
 
 const LiveTicker = dynamic(() => import('./LiveTicker'), { ssr: false, loading: () => null });
 
@@ -140,7 +141,12 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
               ))}
             </div>
 
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--phosphor)', opacity: 0.3, marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--phosphor)', opacity: 0.6, letterSpacing: '0.12em', marginBottom: '0' }}>
+              TRY IT  ·  PRICE CHART
+            </div>
+            <PriceChart />
+
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--phosphor)', opacity: 0.3, marginBottom: '8px', marginTop: '48px' }}>
               git log --project market-terminal
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: 1.7, color: 'var(--phosphor)', opacity: 0.6 }}>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DecryptText from '@/components/core/DecryptText';
 import ProjectShell from './ProjectShell';
+const CompanyAnalysis = dynamic(() => import('./CompanyAnalysis'), { ssr: false, loading: () => null });
 
 const ThesisConstruction = dynamic(() => import('./ThesisConstruction'), { ssr: false, loading: () => null });
 
@@ -123,7 +124,12 @@ export default function Equity({ soundEnabled = false }: EquityProps) {
               ))}
             </div>
 
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)', opacity: 0.4, marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--steel)', opacity: 0.6, letterSpacing: '0.12em', marginBottom: '0' }}>
+              TRY IT  ·  COMPANY ANALYSIS
+            </div>
+            <CompanyAnalysis />
+
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)', opacity: 0.4, marginBottom: '8px', marginTop: '48px' }}>
               git log --project equity-research
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: 1.7, color: 'var(--steel)', opacity: 0.7 }}>

@@ -139,6 +139,7 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
       const file = args[0];
       if (!file) return { lines: ['cat: missing filename'] };
       if (file === 'resume.pdf') return { lines: ['Downloading resume...'], action: 'open', actionArg: '/resume.pdf' };
+      if (file === 'identity.md') return { lines: IDENTITY_LINES, action: 'navigate', actionArg: '/neel/identity' };
       return { lines: catFile(file) };
     }
 
@@ -174,6 +175,15 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
       if (target === 'linkedin') return { lines: ['Opening LinkedIn...'], action: 'open', actionArg: 'https://linkedin.com/in/neelkachhadia' };
       return { lines: [`open: unknown target '${target}'`] };
     }
+
+    case '/logs':
+      return { lines: ['Opening /neel/logs...'], action: 'navigate', actionArg: '/neel/logs' };
+
+    case '/stack':
+      return { lines: ['Opening /neel/stack...'], action: 'navigate', actionArg: '/neel/stack' };
+
+    case '/capabilities':
+      return { lines: ['Opening /neel/capabilities...'], action: 'navigate', actionArg: '/neel/capabilities' };
 
     case 'ssh': {
       if (args[0] === 'transmission') {

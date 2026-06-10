@@ -12,7 +12,6 @@
     "@studio-freight/lenis": "^1.0.42",
     "@types/gsap": "^1.20.2",
     "@types/howler": "^2.2.13",
-    "cannon-es": "^0.20.0",
     "groq-sdk": "^1.2.1",
     "gsap": "^3.15.0",
     "howler": "^2.2.4",
@@ -20,6 +19,8 @@
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
+    "react-is": "^19.2.7",
+    "recharts": "^3.8.1",
     "three": "^0.184.0",
     "tone": "^15.1.22"
   },

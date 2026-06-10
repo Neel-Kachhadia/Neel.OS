@@ -211,7 +211,11 @@ export default function Home() {
 
       {appState === 'hero' && (
         <main>
-          <Hero sessionCount={session.count} />
+          <Hero
+            sessionCount={session.count}
+            onNavigate={handleNavigate}
+            onModeChange={handleModeChange}
+          />
           <Manifesto />
           <Unreasonable />
           <Counter />
