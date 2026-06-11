@@ -20,7 +20,7 @@ Currently building:
   → Indian Market Terminal [IN PROGRESS]
   → NEEL.OS: this system [YOU ARE HERE]
 
-Mumbai. Available. Unreasonable.`;
+Mumbai. Available. Shipping.`;
 
 export default function Identity() {
   return (

@@ -37,8 +37,8 @@ const PROJECTS: Project[] = [
     pct: 70,
     stack: 'Rust · FastAPI · Redis · DuckDB',
     description: 'Professional NSE research terminal. Live tick ingestion. Options Greeks in progress.',
-    bgColor: 'linear-gradient(160deg, #0A0A0A 0%, #001A13 100%)',
-    accentColor: '#0AD09A',
+    bgColor: 'linear-gradient(180deg, #0A0A0A 0%, #1A1400 100%)',
+    accentColor: '#FFB800',
   },
 ];
 

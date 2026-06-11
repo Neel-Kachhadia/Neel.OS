@@ -4,6 +4,8 @@ import { useState } from 'react';
 import BottomBar from './BottomBar';
 import MobileProject from './MobileProject';
 import { Session } from '@/lib/session';
+import { Mode } from '@/hooks/useMode';
+import RecruiterPanel from '@/components/modes/RecruiterPanel';
 
 type Section = 'projects' | 'stack' | 'logs' | 'contact' | 'whoami';
 
@@ -48,10 +50,17 @@ const FAILURES_LOG = `[FAIL] NeuroFin v1 — too many features at once
 
 type LogTab = 'growth' | 'failures' | 'shipping';
 
-export default function PocketShell({ session }: { session: Session }) {
+interface PocketShellProps {
+  session: Session;
+  mode: Mode;
+  onModeChange: (mode: Mode) => void;
+}
+
+export default function PocketShell({ session, mode, onModeChange }: PocketShellProps) {
   const [section, setSection] = useState<Section>('projects');
   const [logTab, setLogTab]   = useState<LogTab>('failures');
   const [copied, setCopied]   = useState(false);
+  const activeMobileMode = mode === 'recruiter' ? 'recruiter' : 'visitor';
 
   const copyEmail = async () => {
     try {
@@ -60,6 +69,18 @@ export default function PocketShell({ session }: { session: Session }) {
       setTimeout(() => setCopied(false), 2000);
     } catch {/* ignore */}
   };
+
+  if (mode === 'recruiter') {
+    return (
+      <RecruiterPanel
+        onClose={() => onModeChange('visitor')}
+        onTransmission={() => {
+          onModeChange('visitor');
+          setSection('contact');
+        }}
+      />
+    );
+  }
 
   return (
     <div
@@ -118,7 +139,7 @@ export default function PocketShell({ session }: { session: Session }) {
         style={{
           flex: 1,
           paddingTop: '80px',
-          paddingBottom: '72px',
+          paddingBottom: '124px',
           overflowY: 'auto',
         }}
       >
@@ -224,7 +245,7 @@ export default function PocketShell({ session }: { session: Session }) {
             </div>
             <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', opacity: 0.7 }}>
               Let&apos;s build something{' '}
-              <span style={{ color: 'var(--lime)' }}>unreasonable</span>.
+              <span style={{ color: 'var(--lime)' }}>shipping</span>.
             </div>
             <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <a
@@ -283,10 +304,44 @@ I care about:
   → performance as a design decision
   → shipping before most people have planned
 
-Session ${session.count.toString().padStart(2, '0')} · Mumbai · Available · Unreasonable`}
+Session ${session.count.toString().padStart(2, '0')} · Mumbai · Available · Shipping`}
             </pre>
           </div>
         )}
+      </div>
+
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: '45px',
+          zIndex: 101,
+          background: 'var(--black)',
+          borderTop: '1px solid rgba(245,240,232,0.08)',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+        }}
+      >
+        {(['visitor', 'recruiter'] as Mode[]).map(m => (
+          <button
+            key={m}
+            onClick={() => onModeChange(m)}
+            style={{
+              minHeight: '44px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeMobileMode === m ? '2px solid var(--online)' : '2px solid transparent',
+              color: activeMobileMode === m ? 'var(--online)' : 'var(--text-on-black)',
+              opacity: activeMobileMode === m ? 1 : 0.45,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.1em',
+            }}
+          >
+            [{m.toUpperCase()}]
+          </button>
+        ))}
       </div>
 
       <BottomBar active={section} onChange={setSection} />

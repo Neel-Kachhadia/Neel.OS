@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Session } from '@/lib/session';
-import { playBootChime, resumeSystemAudio } from '@/lib/audio';
+import { playBootChime, playBootTick, resumeSystemAudio } from '@/lib/soundEngine';
 
 interface BootProps {
   session: Session;
@@ -51,7 +51,7 @@ function getReturnLines(session: Session) {
   return [
     { key: 'init',    text: 'NEEL.OS v1.0.0  [kernel 6.1.0-neel · Mumbai]' },
     { key: 'sep1',   text: '──────────────────────────────────────────────────────────' },
-    { key: 'cache',  text: 'Session restored from cache.' },
+    { key: 'cache',  text: 'Session restored from cache' },
     { key: 'sep2',   text: '──────────────────────────────────────────────────────────' },
     { key: 'blank1', text: '' },
     { key: 'welcome',text: 'Welcome back, visitor.' },
@@ -108,6 +108,7 @@ export default function Boot({ session, onComplete }: BootProps) {
       if (i < source.length) {
         const text = formatLine(source[i].text);
         setLines(prev => [...prev, text]);
+        if (text.includes('[OK]')) playBootTick(i);
         i++;
       } else {
         clearInterval(interval);
@@ -216,7 +217,7 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
       }}
     >
       <div style={{ marginBottom: '16px' }}>enable system audio?</div>
-      <div style={{ display: 'flex', gap: '16px' }}>
+      <div style={{ display: 'flex', gap: '16px', whiteSpace: 'nowrap' }}>
         <button
           onClick={() => handleChoice('y')}
           data-cursor-hover

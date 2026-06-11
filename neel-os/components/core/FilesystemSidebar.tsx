@@ -1,6 +1,5 @@
 'use client';
 
-import { getLenis } from '@/lib/lenis';
 import { FILESYSTEM } from '@/lib/filesystem';
 
 interface FilesystemSidebarProps {
@@ -32,14 +31,8 @@ const TREE_ITEMS: TreeItem[] = [
 
 export default function FilesystemSidebar({ currentPath, onNavigate }: FilesystemSidebarProps) {
   const navigate = (path: string) => {
-    const node = FILESYSTEM[path];
-    if (!node) return;
+    if (!FILESYSTEM[path]) return;
     onNavigate(path);
-    const lenis = getLenis();
-    if (lenis) {
-      const el = document.querySelector(node.scrollTo);
-      if (el) lenis.scrollTo(el as HTMLElement, { duration: 1.2 });
-    }
   };
 
   return (

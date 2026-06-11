@@ -1,5 +1,4 @@
 import { FILESYSTEM } from './filesystem';
-import { getLenis } from './lenis';
 
 export interface CommandResult {
   lines: string[];
@@ -41,14 +40,14 @@ const NPM_INSPECT: Record<string, string[]> = {
     '────────────────────────────────────',
     'Used in:',
     '  → NEEL.OS hero fluid simulation',
-    '  → NEEL.OS letter physics rendering',
+    '  → NEEL.OS state transition rendering',
     '  → Project world shader rendering (3 scenes)',
     '  → Contact section displacement ripple',
     'Why:',
     '  Single WebGL context shared across all scenes.',
     '  Custom GLSL shaders require low-level access.',
-    '  Lusion sync method: Lenis → GSAP → uniforms.',
-    '  rAF and scroll never desync.',
+    '  State machine transitions keep rAF work isolated.',
+    '  Project worlds lazy-load only when entered.',
   ],
   langgraph: [
     'langgraph · 0.1.0',
@@ -253,7 +252,7 @@ const IDENTITY_LINES = [
   '  → Indian Market Terminal [IN PROGRESS]',
   '  → NEEL.OS: this system [YOU ARE HERE]',
   '',
-  'Mumbai. Available. Unreasonable.',
+  'Mumbai. Available. Shipping.',
 ];
 
 const HELP_OUTPUT = [
@@ -437,6 +436,6 @@ const SHIPPING_LOG = [
   '       Real-time bidirectional chat · LLM-powered matching',
   '',
   '[2026] NEEL.OS — living portfolio runtime',
-  '       Next.js 14 · Three.js · GSAP · Cannon-es · Groq API',
+  '       Next.js 14 · Three.js · GSAP · Tone.js · Groq API',
   '       You are inside this one right now',
 ];

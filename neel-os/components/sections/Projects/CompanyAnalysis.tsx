@@ -74,16 +74,20 @@ export default function CompanyAnalysis() {
     });
 
     // Fetch live price
+    let priceContext: LivePrice | null = null;
     try {
       const res = await fetch(`/api/market-data?symbol=${company.id}`);
       const data = await res.json();
       if (!data.error) {
+        priceContext = data;
         setLivePrice(data);
       } else {
-        setLivePrice({ price: 0, change: 0, changePct: 0, volume: 0, error: true });
+        priceContext = { price: 0, change: 0, changePct: 0, volume: 0, error: true };
+        setLivePrice(priceContext);
       }
     } catch {
-      setLivePrice({ price: 0, change: 0, changePct: 0, volume: 0, error: true });
+      priceContext = { price: 0, change: 0, changePct: 0, volume: 0, error: true };
+      setLivePrice(priceContext);
     }
 
     setPhase('done');
@@ -97,7 +101,14 @@ export default function CompanyAnalysis() {
       const res = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          query,
+          context: {
+            source: 'equity-analysis',
+            company,
+            livePrice: priceContext,
+          },
+        }),
         signal: ctrl.signal,
       });
       if (res.body) {

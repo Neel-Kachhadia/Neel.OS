@@ -39,6 +39,7 @@ interface NeuroFinProps {
 export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
   const [shellDone,    setShellDone]    = useState(false);
   const [shaderActive, setShaderActive] = useState(false);
+  const [traceRun,     setTraceRun]     = useState(0);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
       }}
     >
       <div style={{ height: '50vh', position: 'relative' }}>
-        <AgentTrace isActive={shaderActive} />
+        <AgentTrace isActive={shaderActive} runKey={traceRun} />
       </div>
 
       <div
@@ -126,7 +127,10 @@ export default function NeuroFin({ soundEnabled = false }: NeuroFinProps) {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--amber)', opacity: 0.6, letterSpacing: '0.12em', marginBottom: '0' }}>
               TRY IT  ·  TAX CALCULATOR
             </div>
-            <GlobalTaxCalculator />
+            <GlobalTaxCalculator
+              soundEnabled={soundEnabled}
+              onRunTrace={() => setTraceRun(v => v + 1)}
+            />
 
             <div
               style={{

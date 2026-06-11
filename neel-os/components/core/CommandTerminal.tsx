@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { parseCommand } from '@/lib/commands';
 import { FILESYSTEM } from '@/lib/filesystem';
-import { getLenis } from '@/lib/lenis';
 import { updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
 
@@ -79,14 +78,20 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
 
     // Handle actions
     if (result.action === 'navigate' && result.actionArg) {
-      const node = FILESYSTEM[result.actionArg];
-      if (node) {
+      if (FILESYSTEM[result.actionArg]) {
         onNavigate(result.actionArg);
-        const el = document.querySelector(node.scrollTo);
-        if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.2 });
       }
     } else if (result.action === 'open' && result.actionArg) {
-      window.open(result.actionArg, '_blank', 'noopener');
+      if (result.actionArg === '/resume.pdf') {
+        const link = document.createElement('a');
+        link.href = '/resume.pdf';
+        link.download = 'Neel_Kachhadia_Resume.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        window.open(result.actionArg, '_blank', 'noopener');
+      }
     } else if (result.action === 'mode' && result.actionArg) {
       onModeChange(result.actionArg as Mode);
     } else if (result.action === 'clear') {
@@ -109,11 +114,6 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
           clearInterval(interval);
           setTimeout(() => {
             onNavigate('/neel/transmission');
-            const node = FILESYSTEM['/neel/transmission'];
-            if (node) {
-              const el = document.querySelector(node.scrollTo);
-              if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 1.2 });
-            }
             setOpen(false);
           }, 500);
         }
@@ -144,27 +144,7 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
     }
   };
 
-  if (!open) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 40,
-          fontFamily: 'var(--font-mono)',
-          fontSize: '9px',
-          color: 'var(--text-on-black)',
-          opacity: 0.3,
-          pointerEvents: 'none',
-          letterSpacing: '0.1em',
-        }}
-      >
-        press / to open terminal
-      </div>
-    );
-  }
+  if (!open) return null;
 
   return (
     <div

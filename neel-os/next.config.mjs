@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['gsap', 'tone', 'lenis', 'three'],
+  transpilePackages: ['gsap', 'tone', 'three'],
 };
 
 export default nextConfig;

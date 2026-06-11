@@ -1,4 +1,4 @@
-import { playDecryptClick } from './audio';
+import { playDecryptClick } from './soundEngine';
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*!?';
 

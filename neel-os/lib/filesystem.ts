@@ -1,19 +1,19 @@
 export interface FSNode {
-  scrollTo: string;
+  target: string;
   label: string;
 }
 
 export const FILESYSTEM: Record<string, FSNode> = {
-  '/neel':                        { scrollTo: '#hero',         label: '~' },
-  '/neel/identity':               { scrollTo: '#identity',     label: 'identity.md' },
-  '/neel/projects':               { scrollTo: '#projects',     label: '/projects' },
-  '/neel/projects/neurofin':      { scrollTo: '#neurofin',     label: 'neurofin' },
-  '/neel/projects/equity':        { scrollTo: '#equity',       label: 'equity-research' },
-  '/neel/projects/market':        { scrollTo: '#market',       label: 'market-terminal' },
-  '/neel/stack':                  { scrollTo: '#stack',        label: '/stack' },
-  '/neel/logs':                   { scrollTo: '#logs',         label: '/logs' },
-  '/neel/capabilities':           { scrollTo: '#capabilities', label: '/capabilities' },
-  '/neel/transmission':           { scrollTo: '#transmission', label: 'transmission' },
+  '/neel':                        { target: '#hero',         label: '~' },
+  '/neel/identity':               { target: '#identity',     label: 'identity.md' },
+  '/neel/projects':               { target: '#projects',     label: '/projects' },
+  '/neel/projects/neurofin':      { target: '#neurofin',     label: 'neurofin' },
+  '/neel/projects/equity':        { target: '#equity',       label: 'equity-research' },
+  '/neel/projects/market':        { target: '#market',       label: 'market-terminal' },
+  '/neel/stack':                  { target: '#stack',        label: '/stack' },
+  '/neel/logs':                   { target: '#logs',         label: '/logs' },
+  '/neel/capabilities':           { target: '#capabilities', label: '/capabilities' },
+  '/neel/transmission':           { target: '#transmission', label: 'transmission' },
 };
 
 export const FILESYSTEM_TREE = `

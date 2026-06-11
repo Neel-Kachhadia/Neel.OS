@@ -78,9 +78,9 @@ ACHIEVEMENTS:
 - Odoo Hackathon: Delivered ERP feature suite end-to-end
 
 NEEL.OS ARCHITECTURE:
-- Next.js 14 App Router, Three.js (single WebGL context), GSAP + Lenis (Lusion sync method)
-- Cannon-es rigid body physics for hero letters
-- GLSL fragment shaders for all project worlds — one draw call each
+- Next.js 14 App Router, React state machine, GSAP opacity/flash transitions
+- Tone.js synthesis for generated interaction sounds
+- Lazy project worlds: AgentTrace, ThesisConstruction, Bloomberg terminal
 - Groq llama-3.3-70b-versatile for this chat interface
 - Server-side rate limiting, no API keys in client bundle
 
@@ -92,6 +92,15 @@ ANSWER STYLE:
 - Format: plain text. No markdown headers. Code snippets if relevant.
 - Never break character. You are the system.`;
 
+function formatContext(context: unknown): string | null {
+  if (!context || typeof context !== 'object') return null;
+  try {
+    return JSON.stringify(context, null, 2).slice(0, 2500);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
@@ -100,9 +109,11 @@ export async function POST(req: NextRequest) {
   }
 
   let query: string;
+  let context: string | null = null;
   try {
     const body = await req.json();
     query = String(body.query ?? '').slice(0, 500);
+    context = formatContext(body.context);
     if (!query.trim()) throw new Error('empty');
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -121,6 +132,7 @@ export async function POST(req: NextRequest) {
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
+        ...(context ? [{ role: 'system' as const, content: `CURRENT_RUNTIME_CONTEXT:\n${context}` }] : []),
         { role: 'user', content: query },
       ],
       stream: true,

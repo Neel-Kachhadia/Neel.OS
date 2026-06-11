@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import TAX_SYSTEMS, { TaxResult } from '@/lib/taxData';
+import { playCommandEnter } from '@/lib/soundEngine';
 
 const AMBER = '#B45309';
 const GREEN = '#4AFF91';
@@ -278,7 +279,6 @@ function CompareOutput({ result, onSwap, onReset }: { result: CompareResult; onS
   const cardStyle = (isWinner: boolean): React.CSSProperties => ({
     flex: 1, padding: '16px',
     border: isWinner ? `1px solid rgba(180,83,9,0.4)` : `1px solid rgba(245,240,232,0.1)`,
-    boxShadow: isWinner ? `0 0 16px rgba(180,83,9,0.12)` : 'none',
   });
 
   return (
@@ -376,7 +376,13 @@ const ANALYZE_LINES_COMPARE = [
   'GENERATING comparison report...',
 ];
 
-export default function GlobalTaxCalculator() {
+export default function GlobalTaxCalculator({
+  soundEnabled = false,
+  onRunTrace,
+}: {
+  soundEnabled?: boolean;
+  onRunTrace?: () => void;
+}) {
   const [geoCountry, setGeoCountry]       = useState('IN');
   const [isMobile, setIsMobile]           = useState(false);
   const [mode, setMode]                   = useState<'single' | 'compare'>('single');
@@ -397,6 +403,10 @@ export default function GlobalTaxCalculator() {
   // animation
   const [phase, setPhase]                 = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [analyzeLines, setAnalyzeLines]   = useState<string[]>([]);
+  const [askQuery, setAskQuery]           = useState('');
+  const [askResponse, setAskResponse]     = useState('');
+  const [askLoading, setAskLoading]       = useState(false);
+  const [askError, setAskError]           = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -458,6 +468,8 @@ export default function GlobalTaxCalculator() {
   const handleCalculate = async () => {
     const n = parseFloat(income.replace(/,/g, ''));
     if (isNaN(n) || n <= 0) return;
+    if (soundEnabled) playCommandEnter();
+    onRunTrace?.();
     setPhase('analyzing');
     await runAnimation(ANALYZE_LINES_SINGLE);
     const sys = TAX_SYSTEMS[countryKey];
@@ -472,6 +484,8 @@ export default function GlobalTaxCalculator() {
     const rawB = incomeBManual ? incomeB : autoConvertedB;
     const nB = parseFloat(rawB.replace(/,/g, ''));
     if (isNaN(nA) || nA <= 0 || isNaN(nB) || nB <= 0) return;
+    if (soundEnabled) playCommandEnter();
+    onRunTrace?.();
     setPhase('analyzing');
     await runAnimation(ANALYZE_LINES_COMPARE);
     const sysA = TAX_SYSTEMS[cA];
@@ -498,6 +512,10 @@ export default function GlobalTaxCalculator() {
     setPhase('idle');
     setSingleResult(null);
     setCompareResult(null);
+    setAskQuery('');
+    setAskResponse('');
+    setAskError('');
+    setAskLoading(false);
     setIncome('');
     setIncomeA('');
     setIncomeB('');
@@ -509,6 +527,53 @@ export default function GlobalTaxCalculator() {
     setPhase('idle');
     setSingleResult(null);
     setCompareResult(null);
+    setAskQuery('');
+    setAskResponse('');
+    setAskError('');
+    setAskLoading(false);
+  };
+
+  const submitTaxQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = askQuery.trim();
+    if (!text || askLoading) return;
+
+    if (soundEnabled) playCommandEnter();
+    setAskLoading(true);
+    setAskResponse('');
+    setAskError('');
+    setAskQuery('');
+
+    try {
+      const res = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: text,
+          context: {
+            source: 'neurofin-tax',
+            mode,
+            singleResult,
+            compareResult,
+          },
+        }),
+      });
+      if (!res.ok || !res.body) {
+        setAskError(res.status === 503 ? 'api not configured' : 'query failed');
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        setAskResponse(prev => prev + decoder.decode(value, { stream: true }));
+      }
+    } catch {
+      setAskError('connection failed');
+    } finally {
+      setAskLoading(false);
+    }
   };
 
   const divider = (
@@ -654,6 +719,27 @@ export default function GlobalTaxCalculator() {
         <>
           <CompareOutput result={compareResult} onSwap={handleSwap} onReset={handleReset} />
         </>
+      )}
+
+      {phase === 'done' && (singleResult || compareResult) && (
+        <div style={{ marginTop: '18px', borderTop: `1px solid rgba(180,83,9,0.2)`, paddingTop: '14px' }}>
+          {(askResponse || askLoading || askError) && (
+            <div style={{ ...mono, fontSize: '11px', color: askError ? AMBER : FG, opacity: 0.75, lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: '12px' }}>
+              {askError || askResponse}
+              {askLoading && <span style={{ color: AMBER }}>▌</span>}
+            </div>
+          )}
+          <form onSubmit={submitTaxQuestion} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ ...mono, fontSize: '11px', color: AMBER, opacity: 0.6 }}>neurofin$</span>
+            <input
+              value={askQuery}
+              onChange={e => setAskQuery(e.target.value)}
+              disabled={askLoading}
+              placeholder="ask about this tax result..."
+              style={{ ...mono, flex: 1, fontSize: '11px', color: FG, background: 'transparent', border: 'none', outline: 'none', borderBottom: `1px solid rgba(180,83,9,0.35)`, paddingBottom: '4px' }}
+            />
+          </form>
+        </div>
       )}
 
       {/* Disclaimer */}

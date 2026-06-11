@@ -24,7 +24,7 @@ const WORDS: Word[] = [
   { text: 'AMAZON BEDROCK',   scale: 1.0, depth: 0.6 },
   { text: 'GLSL',             scale: 1.7, depth: 1.5 },
   { text: 'LANGCHAIN',        scale: 0.9, depth: 0.7 },
-  { text: 'CANNON-ES',        scale: 1.2, depth: 1.0 },
+  { text: 'TONE.JS',          scale: 1.2, depth: 1.0 },
   { text: 'ISOLATION FOREST', scale: 1.4, depth: 1.2 },
   { text: 'NEXT.JS',          scale: 1.0, depth: 0.8 },
   { text: 'DOCKER',           scale: 1.1, depth: 0.9 },

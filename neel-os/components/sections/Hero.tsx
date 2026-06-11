@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getLenis } from '@/lib/lenis';
 import { updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
+import { playCommandEnter } from '@/lib/soundEngine';
 
 interface HeroProps {
   sessionCount: number;
+  soundEnabled: boolean;
   onNavigate: (path: string) => void;
   onModeChange: (m: Mode) => void;
+  onStateChange?: (state: string) => void;
 }
 
 interface OutputLine { text: string }
@@ -109,15 +111,14 @@ const PATH_TARGET: Record<string, string> = {
 };
 
 const OPEN_TARGET: Record<string, string> = {
-  'cat resume.pdf': '/resume.pdf',
-  'open github':    'https://github.com/Neel-Kachhadia',
-  'open linkedin':  'https://linkedin.com/in/neelkachhadia',
+  'open github':   'https://github.com/Neel-Kachhadia',
+  'open linkedin': 'https://linkedin.com/in/neelkachhadia',
 };
 
 const SECTION_ACCENT: Record<string, string> = {
   neurofin: '#B45309',
   equity:   '#94A3B8',
-  market:   '#0AD09A',
+  market:   '#FFB800',
 };
 
 const HELP_LINES = [
@@ -182,7 +183,18 @@ function TermLine({ text }: { text: string }) {
   return <span style={{ color: FG(0.8) }}>{text}</span>;
 }
 
-export default function Hero({ onNavigate, onModeChange }: HeroProps) {
+const PATH_TO_STATE: Record<string, string> = {
+  '/neel/projects/neurofin':     'neurofin',
+  '/neel/projects/equity':       'equity',
+  '/neel/projects/market':       'market',
+  '/neel/identity':              'identity',
+  '/neel/logs':                  'logs',
+  '/neel/stack':                 'stack',
+  '/neel/capabilities':          'capabilities',
+  '/neel/transmission':          'transmission',
+};
+
+export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateChange }: HeroProps) {
   const [outputs, setOutputs] = useState<OutputEntry[]>([]);
   const [input, setInput] = useState('');
   const [cmdHistory, setCmdHistory] = useState<string[]>(() => {
@@ -245,16 +257,7 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
       observers.push(obs);
     });
 
-    ['identity', 'logs', 'stack', 'capabilities', 'transmission', 'manifesto', 'unreasonable', 'counter'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) { setBackColor(FG(0.5)); setActiveSection(id); } },
-        { threshold: 0.2 }
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
+    // Section observers not needed in state machine — sections render in separate states
 
     return () => observers.forEach(obs => obs.disconnect());
   }, []);
@@ -271,6 +274,7 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
     const trimmed = cmd.trim();
     if (!trimmed) return;
     const normalized = trimmed.toLowerCase();
+    if (soundEnabled) playCommandEnter();
 
     // clear never gets a prompt
     if (normalized === 'clear') {
@@ -317,10 +321,17 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
             busyRef.current = false;
             const navDelay = normalized === 'sudo hire-neel' ? 800 : 600;
             setTimeout(() => {
-              if (navTarget) {
-                const el = document.querySelector(navTarget);
-                if (el) getLenis()?.scrollTo(el as HTMLElement, { duration: 0.8 });
-                if (pathTarget) onNavigate(pathTarget);
+              if (pathTarget) {
+                onNavigate(pathTarget);
+                const state = PATH_TO_STATE[pathTarget];
+                if (state && onStateChange) onStateChange(state);
+              } else if (normalized === 'cat resume.pdf') {
+                const link = document.createElement('a');
+                link.href = '/resume.pdf';
+                link.download = 'Neel_Kachhadia_Resume.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               } else if (openTarget) {
                 window.open(openTarget, '_blank', 'noopener');
               }
@@ -342,7 +353,7 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
         return [...arr.slice(0, -1), last];
       });
     }
-  }, [onNavigate, onModeChange]);
+  }, [onNavigate, onModeChange, soundEnabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -376,8 +387,6 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
         { text: '[EXIT] Returning to shell............... [OK]' },
       ] },
     ]);
-    const hero = heroRef.current;
-    if (hero) getLenis()?.scrollTo(hero, { duration: 0.8 });
     setTimeout(() => {
       if (lastCmdRef.current) {
         setOutputs(prev => [
@@ -390,6 +399,7 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
   }, [activeSection]);
 
   const pad = isMobile ? '24px' : '48px';
+  const leftPad = isMobile ? pad : 'calc(200px + 24px)';
 
   return (
     <>
@@ -435,16 +445,23 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
         {/* Scrollable area: separators + identity card + terminal output */}
         <div
           style={{
-            flex: 1,
+            flex: '0 1 auto',
+            maxHeight: 'calc(100vh - 58px)',
+            minHeight: 0,
             overflowY: 'auto',
             padding: `${pad} ${pad} 0`,
+            paddingLeft: leftPad,
             display: 'flex',
             flexDirection: 'column',
           }}
           onClick={() => inputRef.current?.focus()}
         >
+          {!isMobile && (
+            <div style={{ color: FG(0.45), fontSize: '12px', marginBottom: '8px', letterSpacing: '0.03em' }}>
+              NEEL.OS v1.0.0  ·  kernel 6.1.0-neel  ·  Mumbai
+            </div>
+          )}
           <Separator />
-
           {isMobile
             ? <MobileIdentityCard uptime={uptime} onCommand={execute} />
             : <DesktopIdentityCard uptime={uptime} />
@@ -477,7 +494,8 @@ export default function Hero({ onNavigate, onModeChange }: HeroProps) {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: `16px ${pad}`,
+            padding: `12px ${pad}`,
+            paddingLeft: leftPad,
             borderTop: '1px solid rgba(245,240,232,0.1)',
             background: '#0A0A0A',
             fontFamily: MONO,
@@ -537,9 +555,7 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
           NEEL KACHHADIA
         </div>
         <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(100)}</div>
-        <div>B.Tech Electronics &amp; Telecom</div>
-        <div>DJSCE Mumbai · 2024–2028</div>
-        <div>Honours in VLSI</div>
+        <div>B.Tech · DJSCE Mumbai · 2024-28</div>
         <div style={{ height: '1.7em' }} />
         <div>Building systems.</div>
         <div>Shipping fast.</div>
@@ -585,15 +601,9 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
       <div style={{
         width: '20px',
         alignSelf: 'stretch',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        color: FG(0.15),
-        fontSize: '13px',
-        lineHeight: '1.7',
+        margin: '0 4px',
+        borderLeft: `1px solid ${FG(0.15)}`,
       }}>
-        {Array.from({ length: 50 }).map((_, i) => <div key={i}>│</div>)}
       </div>
 
       {/* Right column */}
@@ -638,7 +648,8 @@ function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: 
       <div style={{ color: FG(1), fontSize: '14px', fontWeight: 600 }}>NEEL KACHHADIA</div>
       <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(50)}</div>
       <div>B.Tech Electronics &amp; Telecom</div>
-      <div>DJSCE Mumbai · 2024–2028 · Honours in VLSI</div>
+      <div>B.Tech · DJSCE Mumbai · 2024-28</div>
+      <div>Honours in VLSI</div>
       <div style={{ height: '1em' }} />
       <div>Building systems. Shipping fast. Mumbai.</div>
       <div style={{ height: '1em' }} />

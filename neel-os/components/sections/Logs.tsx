@@ -55,7 +55,7 @@ const SHIPPING_LOG = `[2024] NeuroFin — conversational AI for personal finance
        Real-time bidirectional chat · LLM-powered matching
 
 [2026] NEEL.OS — living portfolio runtime
-       Next.js 14 · Three.js · GSAP · Cannon-es · Groq API
+       Next.js 14 · Three.js · GSAP · Tone.js · Groq API
        You are inside this one right now`;
 
 const LOGS: Record<LogFile, string> = {

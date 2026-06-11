@@ -11,7 +11,7 @@ export default function PathIndicator({ path, onWhite = false }: PathIndicatorPr
       style={{
         position: 'fixed',
         bottom: '24px',
-        left: '24px',
+        left: 'calc(200px + 24px)',
         zIndex: 30,
         fontFamily: 'var(--font-mono)',
         fontSize: '9px',

@@ -10,7 +10,7 @@ const AGENTS = [
   { label: 'recommendation', action: 'composing...'  },
 ];
 
-export default function AgentTrace({ isActive }: { isActive: boolean }) {
+export default function AgentTrace({ isActive, runKey = 0 }: { isActive: boolean; runKey?: number }) {
   const [fills,   setFills]   = useState<boolean[]>(() => Array(5).fill(false));
   const [dones,   setDones]   = useState<boolean[]>(() => Array(5).fill(false));
   const [showOut, setShowOut] = useState(false);
@@ -81,12 +81,12 @@ export default function AgentTrace({ isActive }: { isActive: boolean }) {
       timers.forEach(clearTimeout);
       if (riskIv) clearInterval(riskIv);
     };
-  }, [isActive]);
+  }, [isActive, runKey]);
 
   const amber    = 'var(--amber)';
   const amberDim = 'rgba(180,83,9,0.2)';
   const online   = 'var(--online)';
-  const lime     = 'var(--lime)';
+  const lime     = 'var(--online)';
   const off      = 'var(--text-on-black)';
 
   return (
@@ -106,7 +106,7 @@ export default function AgentTrace({ isActive }: { isActive: boolean }) {
 
         <div style={{ marginBottom: '14px' }}>
           <div style={{ color: amber, fontSize: '9px', letterSpacing: '0.1em', marginBottom: '4px', opacity: 0.7 }}>INPUT</div>
-          <div style={{ opacity: 0.55, fontSize: '10px' }}>&ldquo;Analyze my spending — I spent ₹45,000 last month&rdquo;</div>
+          <div style={{ opacity: 0.55, fontSize: '10px' }}>&ldquo;Analyze ₹12,00,000 annual income and optimize tax routing&rdquo;</div>
         </div>
 
         <div style={{ marginBottom: '14px' }}>
@@ -133,10 +133,10 @@ export default function AgentTrace({ isActive }: { isActive: boolean }) {
         <div style={{ opacity: showOut ? 1 : 0, transition: 'opacity 0.4s ease' }}>
           <div style={{ color: amber, fontSize: '9px', letterSpacing: '0.1em', marginBottom: '8px', opacity: 0.7 }}>OUTPUT</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <OutRow label="Risk score"     value={`${risk}/100`}                        badge="[LOW]" badgeColor={online} />
-            <OutRow label="Anomaly"        value="₹12,400 dining spend flagged"          valueColor={lime} />
-            <OutRow label="Forecast"       value="₹41,200 next month (projected)" />
-            <OutRow label="Recommendation" value="Reduce dining by 18% to hit goal" />
+            <OutRow label="Risk score"     value={`${risk}/100`}                 badge="[LOW]" badgeColor={online} />
+            <OutRow label="Tax estimate"   value="₹60,000 projected liability"   valueColor={lime} />
+            <OutRow label="Take-home"      value="₹95,000/month projected" />
+            <OutRow label="Recommendation" value="New regime wins for base case" />
           </div>
         </div>
 

@@ -10,36 +10,38 @@ interface DebugOverlayProps {
 const TECH_DECISIONS = [
   {
     tech: 'Three.js (single context)',
-    decision: 'One WebGL renderer for all scenes',
-    reason: 'Multiple contexts cause GPU resource exhaustion. Lusion sync prevents rAF/scroll desync.',
-  },
-  {
-    tech: 'Cannon-es (physics)',
-    decision: 'Rigid body simulation for hero letters',
-    reason: 'CSS transitions are deterministic. Physics makes every load unique. The randomness IS the design.',
+    decision: 'One WebGL renderer shared across all scenes',
+    reason: 'Multiple contexts cause GPU resource exhaustion.',
   },
   {
     tech: 'Groq (llama-3.3-70b)',
     decision: 'Server-side streaming chat',
-    reason: 'Sub-second first token. Speed = system responding, not model thinking. Rate limited.',
+    reason: 'Sub-second first token. Speed = system responding, not model thinking.',
   },
   {
-    tech: 'Lenis + GSAP sync',
-    decision: 'Lenis scroll → GSAP → shader uniforms',
-    reason: 'Native scroll runs off main thread. rAF runs on main thread. Without sync, WebGL desyncs.',
+    tech: 'GSAP (transitions)',
+    decision: 'State transitions via GSAP opacity timelines',
+    reason: 'No scroll-linked timelines. Pure state machine.',
   },
   {
     tech: 'GLSL fragment shaders',
     decision: 'Pure shader project visuals — no 3D models',
-    reason: 'One draw call per scene. Deterministic 60fps. The behavior of each system IS the shader.',
+    reason: 'One draw call per scene. Deterministic 60fps.',
+  },
+  {
+    tech: 'Tone.js synthesis',
+    decision: 'All sounds generated programmatically',
+    reason: 'No audio files. Every listen slightly different.',
   },
 ];
 
 const PERF_BUDGET = [
-  { phase: 'Boot (critical)',   target: '80kb',  items: 'boot seq, font loading, session' },
-  { phase: 'Hero (lazy)',       target: '120kb', items: 'Three.js, Cannon-es, GSAP' },
-  { phase: 'Shaders (lazy)',    target: '15kb',  items: 'per shader, loaded on approach' },
-  { phase: 'Features (demand)', target: '60kb',  items: 'Tone.js, Groq chat' },
+  { phase: 'Boot (critical)',         target: '80kb',  items: 'boot seq, fonts, session' },
+  { phase: 'Terminal root (lazy)',    target: '120kb', items: 'Three.js, GSAP' },
+  { phase: 'neurofin (lazy)',         target: '30kb',  items: 'AgentTrace, TaxCalc, AskNeel' },
+  { phase: 'equity (lazy)',           target: '30kb',  items: 'ThesisConst, CompanyAnalysis, Chart' },
+  { phase: 'market (lazy)',           target: '25kb',  items: 'Bloomberg terminal, LiveTicker' },
+  { phase: 'Supporting states',       target: '20kb',  items: 'identity, logs, stack, capabilities, transmission' },
 ];
 
 export default function DebugOverlay({ currentPath, motionProfile }: DebugOverlayProps) {

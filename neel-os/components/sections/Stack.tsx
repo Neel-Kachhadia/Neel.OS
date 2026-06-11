@@ -26,9 +26,7 @@ const PACKAGES: Package[] = [
   { name: 'duckdb',           version: '0.10.0',  status: 'installed' },
   { name: 'three',            version: '0.160.0', status: 'active' },
   { name: 'gsap',             version: '3.12.0',  status: 'active' },
-  { name: 'cannon-es',        version: '0.20.0',  status: 'active' },
   { name: 'tone',             version: '14.7.0',  status: 'active' },
-  { name: 'lenis',            version: '1.1.0',   status: 'active' },
   { name: 'aws',              version: '',        status: 'deployed' },
   { name: 'vercel',           version: '',        status: 'deployed' },
   { name: 'firebase',         version: '',        status: 'installed' },
@@ -36,10 +34,10 @@ const PACKAGES: Package[] = [
 
 const NPM_INSPECT: Record<string, string[]> = {
   three: [
-    'Used in: NEEL.OS hero fluid, letter physics, project shaders, contact ripple',
+    'Used in: NEEL.OS hero shaders, project visuals, contact ripple',
     'Why: single WebGL context — all scenes share renderer.',
     '     Custom GLSL requires low-level access.',
-    '     Lusion sync: Lenis → GSAP → uniforms. rAF never desyncs.',
+    '     One draw call per scene. Deterministic 60fps.',
   ],
   langgraph: [
     'Used in: NeuroFin 12-specialist routing, Equity Research reasoning chain',

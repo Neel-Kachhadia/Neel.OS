@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { playContactChime } from '@/lib/audio';
+import { playContactChime } from '@/lib/soundEngine';
 
 interface Particle {
   x: number;

@@ -7,7 +7,7 @@
 :root {
   --black:        #0A0A0A;
   --offwhite:     #F5F0E8;
-  --lime:         #C8F027;
+  --lime:         #4AFF91;
   --online:       #4AFF91;
   --amber:        #B45309;
   --copper:       #924000;
@@ -35,7 +35,7 @@
 html {
   background: var(--black);
   color: var(--text-on-black);
-  cursor: none;
+  cursor: none !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: auto;
@@ -43,16 +43,16 @@ html {
 
 body {
   overflow-x: hidden;
-  cursor: none;
+  cursor: none !important;
 }
 
-* {
+*, *::before, *::after {
   border-radius: 0 !important;
-  box-shadow: none !important;
+  cursor: none !important;
 }
 
 button, a {
-  cursor: none;
+  cursor: none !important;
 }
 
 a {
@@ -67,14 +67,6 @@ a {
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
