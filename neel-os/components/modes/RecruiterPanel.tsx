@@ -58,7 +58,7 @@ export default function RecruiterPanel({ onClose, onTransmission, onChat }: Recr
           </div>
           <div style={{ marginTop: '12px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ color: GREEN, fontSize: '11px' }}>● AVAILABLE</span>
-            <span style={{ opacity: 0.5, fontSize: '10px' }}>B.Tech Y1 · DJSCE Mumbai · 2024-28</span>
+            <span style={{ opacity: 0.5, fontSize: '10px' }}>B.Tech Y2 · DJSCE Mumbai · 2024-28</span>
           </div>
         </div>
 
