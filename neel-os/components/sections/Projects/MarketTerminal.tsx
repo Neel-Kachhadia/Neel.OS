@@ -11,7 +11,6 @@ import { playCommandEnter } from '@/lib/soundEngine';
 // Bloomberg amber color system
 const AMB   = '#FFB800';
 const AMB2  = '#FF8C00';
-const HDRBG = '#1A1400';
 const BG    = '#0A0A0A';
 const UP    = '#00FF41';
 const DN    = '#FF3B3B';
@@ -20,6 +19,15 @@ const DIM   = 'rgba(255,184,0,0.4)';
 const MONO  = 'var(--font-mono)';
 
 type FKey = 'EQUITY' | 'OPTIONS' | 'CHARTS' | 'ALERTS' | 'PORTFOLIO' | 'F1:HELP';
+
+const COMMAND_ROW: { key: FKey; label: string }[] = [
+  { key: 'EQUITY', label: 'equity' },
+  { key: 'OPTIONS', label: 'options' },
+  { key: 'CHARTS', label: 'charts' },
+  { key: 'ALERTS', label: 'alerts' },
+  { key: 'PORTFOLIO', label: 'portfolio' },
+  { key: 'F1:HELP', label: 'help' },
+];
 
 interface IndexRow { price: number; change: number; pct: number; dir: 'up' | 'dn' }
 interface OptionRow { strike: number; oi: string; oiChg: string; ltp: number; iv: number; delta: number; gamma: number; theta: number; vega: number; type: 'CE' | 'PE' }
@@ -39,6 +47,24 @@ const INDICES = [
 
 const NIFTY_52W = { low: 21743.65, high: 26277.35 };
 const NIFTY_FIB_382 = NIFTY_52W.low + (NIFTY_52W.high - NIFTY_52W.low) * 0.382;
+
+function fallbackHistory(): HistPoint[] {
+  const now = Date.now();
+  return [1384.35, 1391.2, 1388.9, 1404.4, 1412.8, 1409.1, 1402.55].map((close, i) => ({
+    time: now - (6 - i) * 30 * 60 * 1000,
+    close,
+  }));
+}
+
+function fallbackLivePrice(): LivePrice {
+  return {
+    price: 1402.55,
+    change: 18.2,
+    changePct: 1.31,
+    volume: 4200000,
+    stale: true,
+  };
+}
 
 function initIndices(): Record<string, IndexRow> {
   return Object.fromEntries(INDICES.map(i => [i.symbol, { price: i.base, change: i.chg, pct: (i.chg / i.base) * 100, dir: i.chg >= 0 ? 'up' : 'dn' as 'up' | 'dn' }]));
@@ -77,11 +103,11 @@ const BUILD_MANIFEST = [
 ];
 
 const GIT_LOG = [
-  'commit d3f9a22  Redis tick ingestion pipeline active',
-  'commit c1b8e44  DuckDB schema for historical data',
-  'commit b44a991  FastAPI layer connecting Rust core',
-  'commit a9f3b11  Rust core — initial architecture',
-  'commit 8c2d330  system design and schema definition',
+  'd3f9a22  Redis tick ingestion pipeline active',
+  'c1b8e44  DuckDB schema for historical data',
+  'b44a991  FastAPI layer connecting Rust core',
+  'a9f3b11  Rust core — initial architecture',
+  '8c2d330  system design and schema definition',
 ];
 
 interface MarketTerminalProps { soundEnabled?: boolean }
@@ -183,9 +209,16 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
       const hist  = await histRes.json();
       const quote = await quoteRes.json();
       if (!hist.error) setPoints(hist.points ?? []);
-      else { setChartErr(true); setPoints([]); }
+      else { setChartErr(false); setPoints(fallbackHistory()); }
       if (!quote.error) setLivePrice(quote);
-    }).catch(() => { if (!cancelled) setChartErr(true); })
+      else setLivePrice(fallbackLivePrice());
+    }).catch(() => {
+      if (!cancelled) {
+        setChartErr(false);
+        setPoints(fallbackHistory());
+        setLivePrice(fallbackLivePrice());
+      }
+    })
       .finally(() => { if (!cancelled) setChartLoad(false); });
     return () => { cancelled = true; };
   }, [selected, range]);
@@ -248,11 +281,12 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
   const borderStyle = `1px solid ${DIV}`;
   const headerStyle: React.CSSProperties = {
-    background: HDRBG,
+    background: BG,
     borderBottom: borderStyle,
-    padding: '4px 12px',
+    height: '32px',
+    padding: '0 48px',
     fontFamily: MONO,
-    fontSize: '10px',
+    fontSize: '12px',
     color: AMB,
     letterSpacing: '0.08em',
     display: 'flex',
@@ -279,17 +313,38 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         flexDirection: 'column',
         fontFamily: MONO,
         color: AMB,
-        padding: 'var(--section-pad-y) calc(200px + var(--section-pad-x))',
-        paddingRight: 'var(--section-pad-x)',
+        padding: '80px 48px 40px calc(200px + 48px)',
       }}
     >
-      {/* Bloomberg terminal frame */}
-      <div style={{ border: borderStyle, maxWidth: '960px', width: '100%' }}>
+      <div style={{ maxWidth: '1120px', width: '100%' }}>
 
         {/* Title bar */}
-        <div style={{ background: HDRBG, borderBottom: borderStyle, padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: BG, borderBottom: borderStyle, padding: '6px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', letterSpacing: '0.12em' }}>NEEL TERMINAL  v0.7β</span>
           <span style={{ fontSize: '9px', color: DIM }}>NSE/BSE  ·  LIVE ●</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px', padding: '14px 48px 10px', fontSize: '12px' }}>
+          {COMMAND_ROW.map((cmd, i) => (
+            <span key={cmd.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={() => handleKey(cmd.key)}
+                data-cursor-hover
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  color: activeKey === cmd.key ? AMB : 'rgba(255,184,0,0.4)',
+                  fontFamily: MONO,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                {activeKey === cmd.key ? `> ${cmd.label}` : cmd.label}
+              </button>
+              {i < COMMAND_ROW.length - 1 && <span style={{ color: 'rgba(255,184,0,0.2)' }}>·</span>}
+            </span>
+          ))}
         </div>
 
         {/* Function key bar */}
@@ -301,15 +356,15 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                 onClick={() => handleKey(k)}
                 data-cursor-hover
                 style={{
-                  background: activeKey === k ? AMB : 'transparent',
-                  color: activeKey === k ? BG : DIM,
+                  background: 'transparent',
+                  color: activeKey === k ? AMB : DIM,
                   border: 'none',
                   fontFamily: MONO,
-                  fontSize: '10px',
-                  padding: '3px 12px',
+                  fontSize: '12px',
+                  padding: '0 12px 0 0',
                   cursor: 'pointer',
                   letterSpacing: '0.08em',
-                  transition: 'all 0.1s',
+                  transition: 'opacity 0.1s',
                   position: 'relative',
                 }}
               >
@@ -326,10 +381,10 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
             onClick={() => handleKey('F1:HELP')}
             data-cursor-hover
             style={{
-              background: activeKey === 'F1:HELP' ? AMB : 'transparent',
-              color: activeKey === 'F1:HELP' ? BG : DIM,
-              border: 'none', fontFamily: MONO, fontSize: '10px',
-              padding: '3px 12px', cursor: 'pointer', letterSpacing: '0.08em',
+              background: 'transparent',
+              color: activeKey === 'F1:HELP' ? AMB : DIM,
+              border: 'none', fontFamily: MONO, fontSize: '12px',
+              padding: 0, cursor: 'pointer', letterSpacing: '0.08em',
             }}
           >
             [F1:HELP]
@@ -337,14 +392,14 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         </div>
 
         {/* Index strip */}
-        <div style={{ background: HDRBG, borderBottom: borderStyle, padding: '6px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 24px' }}>
+        <div style={{ background: BG, borderBottom: '1px solid rgba(255,184,0,0.15)', padding: '8px 48px', display: 'flex', flexWrap: 'wrap', gap: '8px 48px', fontSize: '12px' }}>
           {[
             { sym: 'NIFTY 50', row: nifty },
             { sym: 'SENSEX',   row: snsx  },
             { sym: 'BANKNIFTY',row: bnk   },
             { sym: 'VIX',      row: vix   },
           ].map(({ sym, row }) => (
-            <div key={sym} style={{ display: 'flex', gap: '8px', fontSize: '10px', alignItems: 'center' }}>
+            <div key={sym} style={{ display: 'flex', gap: '8px', fontSize: '12px', alignItems: 'center' }}>
               <span style={{ minWidth: '80px', color: flashSym === sym ? AMB : DIM, transition: 'color 0.15s' }}>
                 {sym}
               </span>
@@ -365,7 +420,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         {(activeKey === 'EQUITY' || activeKey === 'CHARTS') && (
           <>
             {/* Company selector + controls */}
-            <div style={{ padding: '8px 12px', borderBottom: borderStyle }}>
+            <div style={{ padding: '8px 48px', borderBottom: '1px solid rgba(255,184,0,0.15)' }}>
               <div style={{ fontSize: '9px', color: DIM, marginBottom: '6px', letterSpacing: '0.08em' }}>
                 COMPANY SELECTOR  ·  12 SYMBOLS
               </div>
@@ -378,10 +433,11 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                 style={{
                   background: BG,
                   color: AMB,
-                  border: `1px solid ${DIV}`,
+                  border: 'none',
+                  borderBottom: `1px solid ${AMB}`,
                   fontFamily: MONO,
-                  fontSize: '10px',
-                  padding: '5px 8px',
+                  fontSize: '12px',
+                  padding: '5px 0',
                   letterSpacing: '0.06em',
                   marginBottom: '8px',
                   minWidth: '260px',
@@ -420,7 +476,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
             </div>
 
             {/* Chart */}
-            <div style={{ padding: '8px 12px', borderBottom: borderStyle, height: activeKey === 'CHARTS' ? '420px' : '220px' }}>
+            <div style={{ padding: '16px 48px', height: activeKey === 'CHARTS' ? '420px' : '260px' }}>
               {!selected ? (
                 <div style={{ color: DIM, fontSize: '11px', paddingTop: '80px', textAlign: 'center' }}>
                   SELECT COMPANY TO VIEW CHART
@@ -436,10 +492,10 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={points} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(255,184,0,0.08)" />
+                    <CartesianGrid stroke="rgba(255,184,0,0.06)" />
                     <XAxis
                       dataKey="time"
-                      tick={{ fontFamily: MONO, fontSize: 8, fill: DIM }}
+                      tick={{ fontFamily: MONO, fontSize: 10, fill: DIM }}
                       stroke={DIV}
                       tickFormatter={(ts: number) => {
                         const d = new Date(ts);
@@ -451,7 +507,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                     />
                     <YAxis
                       domain={['auto', 'auto']}
-                      tick={{ fontFamily: MONO, fontSize: 8, fill: DIM }}
+                      tick={{ fontFamily: MONO, fontSize: 10, fill: DIM }}
                       stroke={DIV}
                       width={55}
                       tickFormatter={(v: number) => v.toFixed(0)}
@@ -461,7 +517,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                         if (!active || !payload?.length) return null;
                         const d = payload[0].payload as HistPoint;
                         return (
-                          <div style={{ background: HDRBG, border: `1px solid ${DIV}`, padding: '6px 10px' }}>
+                          <div style={{ background: BG, border: 'none', padding: '6px 10px' }}>
                             <div style={{ fontFamily: MONO, fontSize: '10px', color: AMB }}>
                               {d.close != null ? fmt(d.close) : '--'}
                             </div>
@@ -470,7 +526,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                       }}
                     />
                     {currentPrice != null && (
-                      <ReferenceLine y={currentPrice} stroke={`${AMB}66`} strokeDasharray="4 4" />
+                      <ReferenceLine y={currentPrice} stroke="rgba(255,184,0,0.3)" strokeDasharray="4 4" />
                     )}
                     <Line
                       type="monotone"
@@ -487,10 +543,10 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
             {/* OHLCV */}
             {selected && livePrice && !livePrice.error && (
-              <div style={{ padding: '6px 12px', borderBottom: borderStyle, display: 'flex', gap: '20px', fontSize: '10px', color: AMB2, flexWrap: 'wrap' }}>
+              <div style={{ padding: '8px 48px', borderTop: '1px solid rgba(255,184,0,0.15)', display: 'flex', gap: '20px', fontSize: '11px', color: 'rgba(255,184,0,0.5)', flexWrap: 'wrap' }}>
                 <span>O: <span style={{ color: AMB }}>{livePrice.price.toFixed(2)}</span></span>
-                <span>H: <span style={{ color: UP }}>{(livePrice.price * 1.002).toFixed(2)}</span></span>
-                <span>L: <span style={{ color: DN }}>{(livePrice.price * 0.998).toFixed(2)}</span></span>
+                <span>H: <span style={{ color: AMB }}>{(livePrice.price * 1.002).toFixed(2)}</span></span>
+                <span>L: <span style={{ color: AMB }}>{(livePrice.price * 0.998).toFixed(2)}</span></span>
                 <span>C: <span style={{ color: AMB }}>{livePrice.price.toFixed(2)}</span></span>
                 <span>VOL: <span style={{ color: AMB }}>{new Intl.NumberFormat('en-IN').format(livePrice.volume)}</span></span>
               </div>
@@ -500,16 +556,16 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
         {/* Options chain */}
         {(activeKey === 'EQUITY' || activeKey === 'OPTIONS') && (
-          <div style={{ padding: '8px 12px', borderBottom: borderStyle }}>
-            <div style={{ fontSize: '9px', color: DIM, letterSpacing: '0.08em', marginBottom: '6px' }}>
+          <div style={{ padding: '8px 48px', borderTop: '1px solid rgba(255,184,0,0.2)' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,184,0,0.45)', letterSpacing: '0.08em', marginBottom: '6px' }}>
               OPTIONS CHAIN  ──  NIFTY  ──  27-JUN-2025
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <div style={{ fontSize: '9px', color: DIM, display: 'grid', gridTemplateColumns: '60px 60px 55px 65px 45px 50px 55px 55px 50px', gap: '0 4px', marginBottom: '4px', letterSpacing: '0.05em', minWidth: '520px' }}>
+              <div style={{ fontSize: '10px', color: 'rgba(255,184,0,0.45)', display: 'grid', gridTemplateColumns: '60px 60px 55px 65px 45px 50px 55px 55px 50px', gap: '0 4px', marginBottom: '4px', letterSpacing: '0.05em', minWidth: '520px' }}>
                 <span>STRIKE</span><span>OI</span><span>OI CHG</span><span>LTP</span><span>IV%</span><span>DELTA</span><span>GAMMA</span><span>THETA</span><span>VEGA</span>
               </div>
               {options.slice(0, 5).map((opt, i) => (
-                <div key={i} style={{ fontSize: '10px', color: AMB, display: 'grid', gridTemplateColumns: '60px 60px 55px 65px 45px 50px 55px 55px 50px', gap: '0 4px', lineHeight: 1.8, fontVariantNumeric: 'tabular-nums', minWidth: '520px' }}>
+                <div key={i} style={{ fontSize: '11px', color: 'rgba(255,184,0,0.7)', display: 'grid', gridTemplateColumns: '60px 60px 55px 65px 45px 50px 55px 55px 50px', gap: '0 4px', lineHeight: 1.8, fontVariantNumeric: 'tabular-nums', minWidth: '520px' }}>
                   <span style={{ color: AMB2 }}>{opt.strike}</span>
                   <span>{opt.oi}</span>
                   <span style={{ color: parseFloat(opt.oiChg) >= 0 ? UP : DN }}>{opt.oiChg}</span>
@@ -527,13 +583,13 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
         {/* Tick stream */}
         {activeKey === 'EQUITY' && (
-          <div style={{ padding: '8px 12px', borderBottom: borderStyle }}>
+          <div style={{ padding: '4px 48px', fontSize: '10px' }}>
             <div style={{ fontSize: '9px', color: DIM, letterSpacing: '0.08em', marginBottom: '4px' }}>TICK STREAM</div>
             {ticks.length === 0 ? (
               <div style={{ fontSize: '10px', color: DIM }}>awaiting ticks...</div>
             ) : (
               ticks.slice(0, 5).map((tick, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 80px 80px 20px 80px', gap: '0 8px', fontSize: '10px', lineHeight: 1.7, opacity: Math.max(0.25, 1 - i * 0.15) }}>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 80px 80px 20px 80px', gap: '0 8px', fontSize: '10px', lineHeight: 1.7, opacity: Math.max(0.25, 1 - i * 0.15), whiteSpace: 'nowrap' }}>
                   <span style={{ color: DIM }}>{tick.time}</span>
                   <span style={{ color: AMB2 }}>{tick.symbol}</span>
                   <span style={{ color: AMB, fontVariantNumeric: 'tabular-nums' }}>{tick.price}</span>
@@ -547,7 +603,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
         {/* Alerts view */}
         {activeKey === 'ALERTS' && (
-          <div style={{ padding: '12px', borderBottom: borderStyle, minHeight: '120px' }}>
+          <div style={{ padding: '8px 48px', borderTop: '1px solid rgba(255,184,0,0.2)', minHeight: '120px' }}>
             <div style={{ fontSize: '9px', color: DIM, letterSpacing: '0.08em', marginBottom: '8px' }}>
               FIBONACCI ALERT HISTORY
             </div>
@@ -567,7 +623,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
                     <button
                       onClick={() => ackAlert(a.id)}
                       data-cursor-hover
-                      style={{ background: 'none', border: `1px solid ${DIV}`, color: AMB, fontFamily: MONO, fontSize: '9px', padding: '1px 8px', cursor: 'pointer', marginLeft: 'auto', letterSpacing: '0.08em', transition: 'border-color 0.1s' }}
+                      style={{ background: 'none', border: 'none', color: AMB, fontFamily: MONO, fontSize: '9px', padding: 0, cursor: 'pointer', marginLeft: 'auto', letterSpacing: '0.08em' }}
                     >
                       [ACKNOWLEDGE]
                     </button>
@@ -580,7 +636,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
         {/* Portfolio / Ask Neel */}
         {activeKey === 'PORTFOLIO' && (
-          <div style={{ padding: '12px', borderBottom: borderStyle, minHeight: '120px' }}>
+          <div style={{ padding: '8px 48px', borderTop: '1px solid rgba(255,184,0,0.2)', minHeight: '120px' }}>
             <div style={{ fontSize: '9px', color: DIM, letterSpacing: '0.08em', marginBottom: '8px' }}>
               NEEL.OS · MARKET QUERY INTERFACE · ONLINE
             </div>
@@ -618,7 +674,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
 
         {/* F1:HELP */}
         {activeKey === 'F1:HELP' && (
-          <div style={{ padding: '12px', borderBottom: borderStyle, fontSize: '10px', lineHeight: 1.8 }}>
+          <div style={{ padding: '8px 48px', borderTop: '1px solid rgba(255,184,0,0.2)', fontSize: '10px', lineHeight: 1.8 }}>
             <div style={{ color: DIM, marginBottom: '8px', letterSpacing: '0.08em', fontSize: '9px' }}>AVAILABLE COMMANDS</div>
             {[
               ['[EQUITY]',    'Main terminal — company selector + chart + options + ticks'],
@@ -640,13 +696,13 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         {activeAlerts.length > 0 && activeKey !== 'ALERTS' && (
           <div
             style={{
-              padding: '6px 12px',
-              background: alertPulse ? `${AMB}22` : 'transparent',
-              borderBottom: borderStyle,
+              padding: '6px 48px',
+              background: 'rgba(255,184,0,0.08)',
+              borderTop: `1px solid ${AMB}`,
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              fontSize: '10px',
+              fontSize: '11px',
               color: alertPulse ? AMB : DIM,
               transition: 'all 0.3s',
             }}
@@ -657,7 +713,7 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
             <button
               onClick={() => ackAlert(activeAlerts[0].id)}
               data-cursor-hover
-              style={{ background: 'none', border: `1px solid ${DIV}`, color: AMB, fontFamily: MONO, fontSize: '9px', padding: '1px 8px', cursor: 'pointer', letterSpacing: '0.08em' }}
+              style={{ background: 'none', border: 'none', color: AMB, fontFamily: MONO, fontSize: '9px', padding: 0, cursor: 'pointer', letterSpacing: '0.08em' }}
             >
               [ACKNOWLEDGE]
             </button>
@@ -665,31 +721,55 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         )}
 
         {/* Path */}
-        <div style={{ padding: '4px 12px', background: HDRBG, fontSize: '9px', color: DIM, letterSpacing: '0.05em', display: 'flex', justifyContent: 'flex-end' }}>
-          root@neel:/projects/market-terminal $
+        <div style={{ padding: '8px 48px', background: BG, borderTop: '1px solid rgba(255,184,0,0.2)', fontSize: '13px', color: DIM, letterSpacing: '0.05em' }}>
+          root@neel:/projects/market-terminal $ <span style={{ color: AMB }}>_</span>
         </div>
       </div>
 
       {/* Build status */}
-      <div style={{ marginTop: '40px', maxWidth: '960px', fontFamily: MONO, fontSize: '11px', color: AMB }}>
-        <div style={{ fontSize: '9px', color: DIM, letterSpacing: '0.12em', marginBottom: '8px' }}>
+      <div style={{ marginTop: '40px', maxWidth: '1120px', fontFamily: MONO, fontSize: '11px', color: AMB }}>
+        <div style={{ fontSize: '13px', color: AMB, marginBottom: '16px' }}>
+          root@neel:/projects/market-terminal $ cat readme.md
+        </div>
+        <pre style={{ fontFamily: MONO, fontSize: '13px', lineHeight: 1.6, color: AMB, opacity: 0.85, whiteSpace: 'pre-wrap', margin: '0 0 32px' }}>
+{`Professional-grade NSE research terminal.
+Live tick ingestion via Redis. Historical data
+via DuckDB. Options Greeks and IV surface
+calculation in progress. 4 languages running
+simultaneously: Rust, Python, SQL, JavaScript.
+
+Stack: Rust · FastAPI · Redis · DuckDB
+       Python · Tauri (planned)
+
+Status: BUILDING ◌  70%
+Repo:   github.com/Neel-Kachhadia`}
+        </pre>
+        <div style={{ fontSize: '11px', color: DIM, letterSpacing: '0.12em', marginBottom: '8px' }}>
           BUILD STATUS ────────────────────────────────────────────────────────
         </div>
-        <div style={{ color: AMB2, marginBottom: '8px', fontSize: '10px' }}>
-          {'█'.repeat(20)}{'░'.repeat(5)}  70%
+        <div style={{ color: AMB, marginBottom: '8px', fontSize: '11px' }}>
+          <span>{'█'.repeat(20)}</span><span style={{ color: 'rgba(255,184,0,0.2)' }}>{'░'.repeat(5)}</span>  70%
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px', fontSize: '10px' }}>
           {BUILD_MANIFEST.map(line => (
-            <div key={line} style={{ color: line.endsWith('✓') ? AMB : DIM, minWidth: '260px', whiteSpace: 'pre' }}>
+            <div key={line} style={{ color: line.endsWith('✓') ? '#4AFF91' : DIM, minWidth: '260px', whiteSpace: 'pre' }}>
               <span>{line}</span>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: '24px', fontSize: '10px', color: DIM }}>
-          git log --project market-terminal
+        <div style={{ marginTop: '32px', fontSize: '13px', color: AMB }}>
+          root@neel:/projects/market-terminal $ git log --oneline
         </div>
-        <div style={{ fontSize: '11px', lineHeight: 1.8, color: AMB2, opacity: 0.7, marginTop: '4px' }}>
-          {GIT_LOG.map((line, i) => <div key={i}>{line}</div>)}
+        <div style={{ fontSize: '11px', lineHeight: 1.8, color: AMB, opacity: 0.85, marginTop: '8px' }}>
+          {GIT_LOG.map((line, i) => {
+            const [hash, ...msg] = line.split(' ');
+            return (
+              <div key={i}>
+                <span style={{ color: 'rgba(255,184,0,0.4)', marginRight: '12px' }}>{hash}</span>
+                <span>{msg.join(' ')}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -705,15 +785,16 @@ function AmberBtn({ label, active, onClick, small }: { label: string; active: bo
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: active ? AMB : 'transparent',
-        color: active ? BG : hover ? AMB : DIM,
-        border: `1px solid ${active ? AMB : hover ? AMB : DIV}`,
+        background: 'transparent',
+        color: active ? AMB : hover ? AMB : DIM,
+        border: 'none',
         fontFamily: MONO,
-        fontSize: small ? '9px' : '10px',
-        padding: small ? '2px 8px' : '3px 10px',
+        fontSize: small ? '11px' : '12px',
+        padding: small ? '0 0 0 10px' : '0 0 0 10px',
         cursor: 'pointer',
         letterSpacing: '0.06em',
-        transition: 'all 0.1s',
+        transition: 'opacity 0.1s',
+        opacity: active ? 1 : 0.4,
       }}
     >
       {label}

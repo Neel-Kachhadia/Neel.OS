@@ -109,7 +109,7 @@ export default function PocketShell({ session, mode, onModeChange }: PocketShell
           alignItems: 'center',
         }}
       >
-        <span style={{ fontSize: '12px', letterSpacing: '0.08em', fontWeight: 700 }}>NEEL.OS</span>
+        <span style={{ fontSize: '12px', letterSpacing: '0.08em', fontWeight: 700 }}>NEEL.OS · NEEL KACHHADIA</span>
         <span style={{ fontSize: '10px', color: 'var(--online)', letterSpacing: '0.1em' }}>
           ONLINE ●
         </span>

@@ -266,7 +266,7 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
         }}
       >
         Let&apos;s build something{' '}
-        <span style={{ color: 'var(--lime)' }}>unreasonable</span>.
+        <span style={{ color: 'rgb(200, 240, 39)' }}>unreasonable</span>.
       </div>
     </section>
   );

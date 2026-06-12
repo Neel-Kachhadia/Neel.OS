@@ -12,7 +12,6 @@ export const FILESYSTEM: Record<string, FSNode> = {
   '/neel/projects/market':        { target: '#market',       label: 'market-terminal' },
   '/neel/stack':                  { target: '#stack',        label: '/stack' },
   '/neel/logs':                   { target: '#logs',         label: '/logs' },
-  '/neel/capabilities':           { target: '#capabilities', label: '/capabilities' },
   '/neel/transmission':           { target: '#transmission', label: 'transmission' },
 };
 
@@ -23,14 +22,8 @@ export const FILESYSTEM_TREE = `
 ├── /projects
 │   ├── neurofin           [DEPLOYED ●]
 │   ├── equity-research    [DEPLOYED ●]
-│   └── market-terminal    [BUILDING ◌ 70%]
+│   └── market-terminal    [BUILDING ◌]
 ├── /stack
-│   └── packages.json
 ├── /logs
-│   ├── growth.log
-│   ├── failures.log
-│   └── shipping.log
-├── /performance
-│   └── budget.md
 └── transmission
 `.trim();

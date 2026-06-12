@@ -72,7 +72,7 @@ function CountryDropdown({
         onChange={e => onChange(e.target.value)}
         style={{
           ...mono, fontSize: '12px', color: FG, background: BG,
-          border: `1px solid rgba(180,83,9,0.4)`, padding: '6px 10px',
+          border: 'none', borderBottom: `1px solid rgba(180,83,9,0.4)`, padding: '6px 0',
           outline: 'none',
         }}
       >
@@ -93,7 +93,7 @@ function CountryDropdown({
         data-cursor-hover
         style={{
           ...mono, fontSize: '12px', color: FG, background: BG,
-          border: `1px solid rgba(180,83,9,0.4)`, padding: '6px 12px',
+          border: 'none', borderBottom: `1px solid rgba(180,83,9,0.4)`, padding: '6px 0',
           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
         }}
       >
@@ -276,16 +276,16 @@ function CompareOutput({ result, onSwap, onReset }: { result: CompareResult; onS
   const winnerC = TAX_SYSTEMS[winnerKey];
   const isUAEWin = winnerKey === 'AE';
 
-  const cardStyle = (isWinner: boolean): React.CSSProperties => ({
-    flex: 1, padding: '16px',
-    border: isWinner ? `1px solid rgba(180,83,9,0.4)` : `1px solid rgba(245,240,232,0.1)`,
+  const comparisonColumnStyle = (isWinner: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: '0',
+    opacity: isWinner ? 1 : 0.75,
   });
 
   return (
     <div style={{ marginTop: '8px' }}>
       <div style={{ display: 'flex', gap: '12px' }}>
-        {/* Country A card */}
-        <div style={cardStyle(countryA === winnerKey)}>
+        <div style={comparisonColumnStyle(countryA === winnerKey)}>
           <div style={{ ...mono, fontSize: '13px', color: FG, marginBottom: '10px', fontWeight: 600 }}>
             {cA.flag} {cA.name.toUpperCase()}
           </div>
@@ -298,8 +298,7 @@ function CompareOutput({ result, onSwap, onReset }: { result: CompareResult; onS
 
         <div style={{ width: '1px', background: 'rgba(245,240,232,0.1)' }} />
 
-        {/* Country B card */}
-        <div style={cardStyle(countryB === winnerKey)}>
+        <div style={comparisonColumnStyle(countryB === winnerKey)}>
           <div style={{ ...mono, fontSize: '13px', color: FG, marginBottom: '10px', fontWeight: 600 }}>
             {cB.flag} {cB.name.toUpperCase()}
           </div>
@@ -344,10 +343,11 @@ function ActionBtn({ label, onClick, primary }: { label: string; onClick: () => 
       onMouseLeave={() => setHover(false)}
       style={{
         ...mono, fontSize: '11px', cursor: 'pointer',
-        border: primary ? `1px solid ${AMBER}` : `1px solid rgba(245,240,232,0.25)`,
-        color: primary ? (hover ? BG : AMBER) : (hover ? FG : `rgba(245,240,232,0.6)`),
-        background: primary ? (hover ? AMBER : 'transparent') : (hover ? 'rgba(245,240,232,0.08)' : 'transparent'),
-        padding: '6px 14px', letterSpacing: '0.08em', transition: 'all 0.12s',
+        border: 'none',
+        color: primary ? AMBER : hover ? FG : `rgba(245,240,232,0.6)`,
+        background: 'transparent',
+        padding: '6px 0', letterSpacing: '0.08em', transition: 'opacity 0.12s',
+        opacity: hover ? 1 : 0.85,
       }}
     >
       {label}
@@ -585,7 +585,7 @@ export default function GlobalTaxCalculator({
   const currentCountry = TAX_SYSTEMS[countryKey];
 
   return (
-    <div style={{ background: BG, border: `1px solid rgba(180,83,9,0.2)`, padding: '24px 28px', maxWidth: '720px', marginTop: '48px' }}>
+    <div style={{ background: BG, padding: 0, maxWidth: '720px', marginTop: 0 }}>
       <div style={{ ...mono, fontSize: '11px', color: AMBER, letterSpacing: '0.12em', marginBottom: '16px' }}>
         NEUROFIN  ·  TAX ANALYSIS MODULE
       </div>
@@ -643,7 +643,7 @@ export default function GlobalTaxCalculator({
       {mode === 'compare' && phase === 'idle' && (
         <div style={{ display: 'flex', gap: '12px' }}>
           {/* Country A */}
-          <div style={{ flex: 1, padding: '14px', border: `1px solid rgba(245,240,232,0.1)` }}>
+          <div style={{ flex: 1, padding: 0 }}>
             <div style={{ ...mono, fontSize: '10px', color: FG, opacity: 0.45, marginBottom: '8px', letterSpacing: '0.1em' }}>COUNTRY A</div>
             <CountryDropdown value={cA} onChange={k => { setCA(k); }} geoCountry={geoCountry} isMobile={isMobile} />
             <div style={{ ...mono, fontSize: '11px', color: FG, opacity: 0.5, marginTop: '12px', marginBottom: '6px' }}>
@@ -663,7 +663,7 @@ export default function GlobalTaxCalculator({
           <div style={{ width: '1px', background: 'rgba(245,240,232,0.1)' }} />
 
           {/* Country B */}
-          <div style={{ flex: 1, padding: '14px', border: `1px solid rgba(245,240,232,0.1)` }}>
+          <div style={{ flex: 1, padding: 0 }}>
             <div style={{ ...mono, fontSize: '10px', color: FG, opacity: 0.45, marginBottom: '8px', letterSpacing: '0.1em' }}>COUNTRY B</div>
             <CountryDropdown value={cB} onChange={k => { setCB(k); }} geoCountry={geoCountry} isMobile={isMobile} />
             <div style={{ ...mono, fontSize: '11px', color: FG, opacity: 0.5, marginTop: '12px', marginBottom: '6px' }}>

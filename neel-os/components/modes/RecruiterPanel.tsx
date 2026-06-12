@@ -43,6 +43,9 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
         <div style={{ padding: '20px 0', borderBottom: `1px solid ${DIV}`, marginBottom: '0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
+              <div style={{ fontSize: '9px', opacity: 0.45, letterSpacing: '0.16em', marginBottom: '6px' }}>
+                CANDIDATE DOSSIER
+              </div>
               <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '4px' }}>
                 NEEL KACHHADIA
               </div>

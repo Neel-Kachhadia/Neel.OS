@@ -1,4 +1,5 @@
-import Link from 'next/link';
+'use client';
+
 import PathDisplay from '@/components/core/PathDisplay';
 
 export default function NotFound() {
@@ -57,23 +58,24 @@ export default function NotFound() {
           </div>
         </div>
 
-        <Link
-          href="/"
+        <button
+          onClick={() => { window.location.href = '/'; }}
           style={{
             display: 'inline-block',
             border: '1px solid rgba(245,240,232,0.25)',
+            background: 'transparent',
             color: 'var(--text-on-black)',
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             padding: '10px 20px',
             letterSpacing: '0.08em',
-            textDecoration: 'none',
             opacity: 0.8,
             transition: 'opacity 0.15s',
+            cursor: 'pointer',
           }}
         >
           [ reboot to /neel ]
-        </Link>
+        </button>
       </div>
     </div>
   );

@@ -82,7 +82,6 @@ const LS_OUTPUT: Record<string, string[]> = {
     'drwxr-xr-x  /projects',
     'drwxr-xr-x  /stack',
     'drwxr-xr-x  /logs',
-    'drwxr-xr-x  /capabilities',
     'drwxr-xr-x  transmission',
   ],
   '/neel/projects': [
@@ -180,9 +179,6 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
 
     case '/stack':
       return { lines: ['Opening /neel/stack...'], action: 'navigate', actionArg: '/neel/stack' };
-
-    case '/capabilities':
-      return { lines: ['Opening /neel/capabilities...'], action: 'navigate', actionArg: '/neel/capabilities' };
 
     case 'ssh': {
       if (args[0] === 'transmission') {

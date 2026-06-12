@@ -41,7 +41,7 @@ const PERF_BUDGET = [
   { phase: 'neurofin (lazy)',         target: '30kb',  items: 'AgentTrace, TaxCalc, AskNeel' },
   { phase: 'equity (lazy)',           target: '30kb',  items: 'ThesisConst, CompanyAnalysis, Chart' },
   { phase: 'market (lazy)',           target: '25kb',  items: 'Bloomberg terminal, LiveTicker' },
-  { phase: 'Supporting states',       target: '20kb',  items: 'identity, logs, stack, capabilities, transmission' },
+  { phase: 'Supporting states',       target: '20kb',  items: 'identity, logs, stack, transmission' },
 ];
 
 export default function DebugOverlay({ currentPath, motionProfile }: DebugOverlayProps) {

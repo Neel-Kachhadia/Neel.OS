@@ -21,7 +21,6 @@ import Hero from '@/components/sections/Hero';
 const Identity      = dynamic(() => import('@/components/sections/Identity'),                     { ssr: false, loading: () => null });
 const Logs          = dynamic(() => import('@/components/sections/Logs'),                         { ssr: false, loading: () => null });
 const Stack         = dynamic(() => import('@/components/sections/Stack'),                        { ssr: false, loading: () => null });
-const Capabilities  = dynamic(() => import('@/components/sections/Capabilities'),                 { ssr: false, loading: () => null });
 const Transmission  = dynamic(() => import('@/components/sections/Transmission'),                 { ssr: false, loading: () => null });
 const NeuroFin      = dynamic(() => import('@/components/sections/Projects/NeuroFin'),            { ssr: false, loading: () => null });
 const Equity        = dynamic(() => import('@/components/sections/Projects/Equity'),              { ssr: false, loading: () => null });
@@ -39,7 +38,6 @@ type TerminalState =
   | 'identity'
   | 'logs'
   | 'stack'
-  | 'capabilities'
   | 'transmission';
 
 const STATE_PATHS: Record<TerminalState, string> = {
@@ -50,7 +48,6 @@ const STATE_PATHS: Record<TerminalState, string> = {
   'identity':      '/neel/identity',
   'logs':          '/neel/logs',
   'stack':         '/neel/stack',
-  'capabilities':  '/neel/capabilities',
   'transmission':  '/neel/transmission',
 };
 
@@ -62,7 +59,6 @@ const STATE_ACCENTS: Record<TerminalState, string> = {
   'identity':      'rgba(245,240,232,0.04)',
   'logs':          'rgba(245,240,232,0.04)',
   'stack':         'rgba(245,240,232,0.04)',
-  'capabilities':  'rgba(245,240,232,0.04)',
   'transmission':  'rgba(245,240,232,0.04)',
 };
 
@@ -76,7 +72,6 @@ const PATH_TO_STATE: Record<string, TerminalState> = {
   '/neel/identity':                'identity',
   '/neel/logs':                    'logs',
   '/neel/stack':                   'stack',
-  '/neel/capabilities':            'capabilities',
   '/neel/transmission':            'transmission',
 };
 
@@ -217,7 +212,7 @@ export default function Home() {
   }
 
   const isProject = termState === 'neurofin' || termState === 'equity' || termState === 'market';
-  const isOffWhite = termState === 'identity' || termState === 'capabilities';
+  const isOffWhite = termState === 'identity';
 
   return (
     <>
@@ -342,7 +337,6 @@ export default function Home() {
           {termState === 'identity' && <Identity />}
           {termState === 'logs' && <Logs />}
           {termState === 'stack' && <Stack />}
-          {termState === 'capabilities' && <Capabilities />}
           {termState === 'transmission' && <Transmission soundEnabled={soundEnabled} />}
         </div>
       )}

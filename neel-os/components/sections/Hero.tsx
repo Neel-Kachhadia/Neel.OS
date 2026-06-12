@@ -54,10 +54,6 @@ const SEQUENCES: Record<string, string[]> = {
     '[MOUNT] Loading stack module............. [OK]',
     'Opening /neel/stack...',
   ],
-  '/capabilities': [
-    '[MOUNT] Loading capabilities............. [OK]',
-    'Opening /neel/capabilities...',
-  ],
   'ssh transmission': [
     '[SSH]  Generating public channel......... [OK]',
     '[SSH]  Establishing connection........... [OK]',
@@ -93,7 +89,6 @@ const NAV_TARGET: Record<string, string> = {
   'cat identity.md':  '#identity',
   '/logs':            '#logs',
   '/stack':           '#stack',
-  '/capabilities':    '#capabilities',
   'ssh transmission': '#transmission',
   'sudo hire-neel':   '#transmission',
 };
@@ -105,7 +100,6 @@ const PATH_TARGET: Record<string, string> = {
   'cat identity.md':  '/neel/identity',
   '/logs':            '/neel/logs',
   '/stack':           '/neel/stack',
-  '/capabilities':    '/neel/capabilities',
   'ssh transmission': '/neel/transmission',
   'sudo hire-neel':   '/neel/transmission',
 };
@@ -134,7 +128,6 @@ const HELP_LINES = [
   '  cat identity.md',
   '  /logs',
   '  /stack',
-  '  /capabilities',
   '',
   'CONTACT',
   '  ssh transmission',
@@ -190,7 +183,6 @@ const PATH_TO_STATE: Record<string, string> = {
   '/neel/identity':              'identity',
   '/neel/logs':                  'logs',
   '/neel/stack':                 'stack',
-  '/neel/capabilities':          'capabilities',
   '/neel/transmission':          'transmission',
 };
 
@@ -622,7 +614,6 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
         <div>cat identity.md</div>
         <div>/logs</div>
         <div>/stack</div>
-        <div>/capabilities</div>
         <div style={{ height: '1.7em' }} />
         <div style={{ color: FG(0.45), letterSpacing: '0.08em' }}>CONTACT</div>
         <div>ssh transmission</div>
@@ -639,7 +630,7 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
 function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: (cmd: string) => void }) {
   const CMDS = [
     'run neurofin', 'run equity', 'run market',
-    'cat identity.md', '/logs', '/stack', '/capabilities',
+    'cat identity.md', '/logs', '/stack',
     'ssh transmission', 'cat resume.pdf', 'open github', 'open linkedin',
     'sudo hire-neel',
   ];
