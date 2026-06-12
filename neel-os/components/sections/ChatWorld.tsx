@@ -62,7 +62,8 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     let i = 0;
     const id = setInterval(() => {
       if (i < BOOT_LINES.length) {
-        setBootLines(prev => [...prev, BOOT_LINES[i]]);
+        const line = BOOT_LINES[i]; // capture by value — React 18 batches interval callbacks
+        setBootLines(prev => [...prev, line]);
         i++;
       } else {
         clearInterval(id);
@@ -101,7 +102,8 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     let i = 0;
     const id = setInterval(() => {
       if (i < BOOT_LINES.length) {
-        setBootLines(prev => [...prev, BOOT_LINES[i]]);
+        const line = BOOT_LINES[i]; // capture by value — React 18 batches interval callbacks
+        setBootLines(prev => [...prev, line]);
         i++;
       } else {
         clearInterval(id);
@@ -311,15 +313,16 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
 }
 
 function BootLine({ text }: { text: string }) {
-  const okIdx = text.indexOf('[OK]');
+  const safe = text ?? '';
+  const okIdx = safe.indexOf('[OK]');
   if (okIdx !== -1) {
     return (
       <span>
-        <span style={{ color: FG, opacity: 0.6 }}>{text.slice(0, okIdx)}</span>
+        <span style={{ color: FG, opacity: 0.6 }}>{safe.slice(0, okIdx)}</span>
         <span style={{ color: GREEN }}>[OK]</span>
-        {text.slice(okIdx + 4)}
+        {safe.slice(okIdx + 4)}
       </span>
     );
   }
-  return <span style={{ opacity: 0.75 }}>{text}</span>;
+  return <span style={{ opacity: 0.75 }}>{safe}</span>;
 }

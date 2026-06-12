@@ -136,23 +136,24 @@ const HELP_LINES = [
 ];
 
 function TermLine({ text }: { text: string }) {
-  if (text === '[returned]') {
-    return <span style={{ color: GREEN }}>{text}</span>;
+  const safe = text ?? '';
+  if (safe === '[returned]') {
+    return <span style={{ color: GREEN }}>{safe}</span>;
   }
-  const okIdx = text.indexOf('[OK]');
+  const okIdx = safe.indexOf('[OK]');
   if (okIdx !== -1) {
     return (
       <span>
-        <span style={{ color: FG(0.6) }}>{text.slice(0, okIdx)}</span>
+        <span style={{ color: FG(0.6) }}>{safe.slice(0, okIdx)}</span>
         <span style={{ color: GREEN }}>[OK]</span>
-        {text.slice(okIdx + 4)}
+        {safe.slice(okIdx + 4)}
       </span>
     );
   }
-  if (/^\[(BOOT|READ|MOUNT|SSH|FILE|NET|sudo|EXIT|INIT|WARN)\]/.test(text)) {
-    return <span style={{ color: FG(0.6) }}>{text}</span>;
+  if (/^\[(BOOT|READ|MOUNT|SSH|FILE|NET|sudo|EXIT|INIT|WARN)\]/.test(safe)) {
+    return <span style={{ color: FG(0.6) }}>{safe}</span>;
   }
-  return <span style={{ color: FG(0.8) }}>{text}</span>;
+  return <span style={{ color: FG(0.8) }}>{safe}</span>;
 }
 
 const PATH_TO_STATE: Record<string, string> = {

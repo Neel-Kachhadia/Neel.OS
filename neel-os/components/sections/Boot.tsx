@@ -90,13 +90,14 @@ export default function Boot({ session, onComplete }: BootProps) {
   };
 
   const renderLine = (line: string) => {
-    const okIndex = line.indexOf('[OK]');
-    if (okIndex === -1) return line || ' ';
+    const safe = line ?? '';
+    const okIndex = safe.indexOf('[OK]');
+    if (okIndex === -1) return safe || ' ';
     return (
       <>
-        {line.slice(0, okIndex)}
+        {safe.slice(0, okIndex)}
         <span style={{ color: 'var(--online)' }}>[OK]</span>
-        {line.slice(okIndex + 4)}
+        {safe.slice(okIndex + 4)}
       </>
     );
   };
