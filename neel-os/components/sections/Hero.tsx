@@ -56,8 +56,6 @@ const SEQUENCES: Record<string, string[]> = {
     'Opening /neel/stack...',
   ],
   'chat': [
-    '[INIT] Loading chat interface............. [OK]',
-    '[INIT] Connecting query interface......... [OK]',
     'Opening NEEL.OS chat...',
   ],
   'ssh transmission': [

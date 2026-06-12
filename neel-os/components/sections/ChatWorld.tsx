@@ -32,6 +32,7 @@ const BOOT_LINES = [
 ];
 
 export default function ChatWorld({ onExit }: ChatWorldProps) {
+  const [mounted, setMounted] = useState(false);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [bootDone, setBootDone] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -41,10 +42,23 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
   messagesRef.current = messages;
 
-  // Boot sequence — 80ms stagger
+  // Mounted guard — first effect
   useEffect(() => {
+    setMounted(true);
+    return () => {
+      setMounted(false);
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  // Boot sequence — fires once mounted becomes true
+  useEffect(() => {
+    if (!mounted) return;
+    setBootLines([]);
+    setBootDone(false);
     let i = 0;
     const id = setInterval(() => {
       if (i < BOOT_LINES.length) {
@@ -56,7 +70,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
       }
     }, 80);
     return () => clearInterval(id);
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
     if (bootDone) inputRef.current?.focus();
@@ -70,10 +84,16 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
 
   // Escape to exit
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onExit(); };
+    if (!mounted) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        abortRef.current?.abort();
+        onExit();
+      }
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onExit]);
+  }, [mounted, onExit]);
 
   const runBoot = useCallback(() => {
     setBootLines([]);
@@ -88,6 +108,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
         setBootDone(true);
       }
     }, 80);
+    return () => clearInterval(id);
   }, []);
 
   const sendMessage = useCallback(async (text: string) => {
@@ -95,7 +116,11 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     if (!trimmed || streaming) return;
 
     const lower = trimmed.toLowerCase();
-    if (lower === 'exit' || lower === 'back') { onExit(); return; }
+    if (lower === 'exit' || lower === 'back') {
+      abortRef.current?.abort();
+      onExit();
+      return;
+    }
     if (lower === 'clear') { setMessages([]); runBoot(); return; }
 
     const userMsg: ChatMessage = { role: 'user', content: trimmed };
@@ -104,11 +129,15 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     setStreaming(true);
     setStreamingText('');
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: trimmed, history }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -116,7 +145,6 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           role: 'assistant',
           content: res.status === 503 ? 'API not configured — GROQ_API_KEY missing.' : 'Query failed. Try again.',
         }]);
-        setStreaming(false);
         return;
       }
 
@@ -130,14 +158,19 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
         setStreamingText(full);
       }
       setMessages(prev => [...prev, { role: 'assistant', content: full }]);
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error.' }]);
     } finally {
+      abortRef.current = null;
       setStreaming(false);
       setStreamingText('');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [streaming, onExit, runBoot]);
+
+  // SSR guard — after all hooks
+  if (!mounted) return null;
 
   return (
     <section
@@ -167,7 +200,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
         }}>
           <span>NEEL.OS  ·  CHAT INTERFACE  ·  <span style={{ color: GREEN }}>ONLINE ●</span></span>
           <button
-            onClick={onExit}
+            onClick={() => { abortRef.current?.abort(); onExit(); }}
             data-cursor-hover
             style={{
               background: 'none',
@@ -269,7 +302,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           />
         </div>
         <div style={{ marginTop: '8px', fontSize: '10px', opacity: 0.3, display: 'flex', justifyContent: 'space-between', letterSpacing: '0.05em' }}>
-          <span>← exit chat</span>
+          <span>type &apos;exit&apos; or &apos;clear&apos; to reset</span>
           <span>[esc] to exit</span>
         </div>
       </div>
