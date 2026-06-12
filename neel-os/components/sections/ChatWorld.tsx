@@ -280,7 +280,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
                 {streamingText.split(/(\s+)/).map((chunk, i) => (
                   <span
                     key={i}
-                    style={{ animation: 'chatWordIn 0.14s ease-out both', opacity: 0.85 }}
+                    style={{ animation: 'chatWordIn 0.4s ease-out both', opacity: 0.85 }}
                   >
                     {chunk}
                   </span>
@@ -338,8 +338,8 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           50% { opacity: 0; }
         }
         @keyframes chatWordIn {
-          from { opacity: 0; }
-          to { opacity: 0.85; }
+          from { opacity: 0; transform: translateY(3px); }
+          to { opacity: 0.85; transform: translateY(0); }
         }
         @keyframes chatDot {
           0%, 80%, 100% { opacity: 0.15; }
