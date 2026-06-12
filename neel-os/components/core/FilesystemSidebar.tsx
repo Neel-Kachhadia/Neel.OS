@@ -21,7 +21,7 @@ const TREE_ITEMS: TreeItem[] = [
   { path: '/neel/identity', display: '├── identity.md', indent: 1, isDir: false },
   { path: '/neel/projects', display: '├── /projects', indent: 1, isDir: true },
   { path: '/neel/projects/neurofin', display: '│   ├── neurofin', indent: 2, isDir: false, status: '[DEPLOYED ●]' },
-  { path: '/neel/projects/equity', display: '│   ├── equity-research', indent: 2, isDir: false, status: '[DEPLOYED ●]' },
+  { path: '/neel/projects/equity-research', display: '│   ├── equity-research', indent: 2, isDir: false, status: '[DEPLOYED ●]' },
   { path: '/neel/projects/market', display: '│   └── market-terminal', indent: 2, isDir: false, status: '[BUILDING ◌]' },
   { path: '/neel/stack', display: '├── /stack', indent: 1, isDir: true },
   { path: '/neel/logs', display: '├── /logs', indent: 1, isDir: true },
