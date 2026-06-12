@@ -610,6 +610,7 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
         <div>cat identity.md</div>
         <div>/logs</div>
         <div>/stack</div>
+        <div>chat</div>
         <div style={{ height: '1.7em' }} />
         <div style={{ color: FG(0.45), letterSpacing: '0.08em' }}>CONTACT</div>
         <div>ssh transmission</div>
@@ -626,7 +627,7 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
 function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: (cmd: string) => void }) {
   const CMDS = [
     'run neurofin', 'run equity', 'run market',
-    'cat identity.md', '/logs', '/stack',
+    'cat identity.md', '/logs', '/stack', 'chat',
     'ssh transmission', 'cat resume.pdf', 'open github', 'open linkedin',
     'sudo hire-neel',
   ];
