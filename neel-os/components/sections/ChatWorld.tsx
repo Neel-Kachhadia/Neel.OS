@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 
 const BG = '#0A0A0A';
 const FG = '#F5F0E8';
@@ -43,6 +43,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const prevStreamWordCountRef = useRef(0);
   messagesRef.current = messages;
 
   // Mounted guard — first effect
@@ -82,6 +83,15 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [bootLines, messages, streamingText]);
+
+  // Track word count after each render so stagger knows what's already visible
+  useLayoutEffect(() => {
+    if (streaming) {
+      prevStreamWordCountRef.current = streamingText.split(/(\s+)/).length;
+    } else {
+      prevStreamWordCountRef.current = 0;
+    }
+  }, [streamingText, streaming]);
 
   // Escape to exit
   useEffect(() => {
@@ -130,6 +140,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
     setMessages(prev => [...prev, userMsg]);
     setStreaming(true);
     setStreamingText('');
+    prevStreamWordCountRef.current = 0;
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -265,31 +276,42 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           </div>
         ))}
 
-        {streaming && (
-          <div style={{ fontSize: '13px', lineHeight: 1.6, marginTop: '8px' }}>
-            <span style={{ color: GREEN }}>NEEL.OS</span>
-            {'  '}
-            {!streamingText ? (
-              <span style={{ opacity: 0.5 }}>
-                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.0s ease-in-out infinite' }}>●</span>
-                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.2s ease-in-out infinite', marginLeft: '5px' }}>●</span>
-                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.4s ease-in-out infinite', marginLeft: '5px' }}>●</span>
-              </span>
-            ) : (
-              <span>
-                {streamingText.split(/(\s+)/).map((chunk, i) => (
-                  <span
-                    key={i}
-                    style={{ animation: 'chatWordIn 0.4s ease-out both', opacity: 0.85 }}
-                  >
-                    {chunk}
-                  </span>
-                ))}
-                <span style={{ color: GREEN, animation: 'chatCursorBlink 0.7s step-end infinite' }}>▋</span>
-              </span>
-            )}
-          </div>
-        )}
+        {streaming && (() => {
+          const streamWords = streamingText.split(/(\s+)/);
+          const prevCount = prevStreamWordCountRef.current;
+          return (
+            <div style={{ fontSize: '13px', lineHeight: 1.6, marginTop: '8px' }}>
+              <span style={{ color: GREEN }}>NEEL.OS</span>
+              {'  '}
+              {!streamingText ? (
+                <span style={{ opacity: 0.5 }}>
+                  <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.0s ease-in-out infinite' }}>●</span>
+                  <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.2s ease-in-out infinite', marginLeft: '5px' }}>●</span>
+                  <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.4s ease-in-out infinite', marginLeft: '5px' }}>●</span>
+                </span>
+              ) : (
+                <span>
+                  {streamWords.map((chunk, i) => {
+                    const isNew = i >= prevCount;
+                    return (
+                      <span
+                        key={i}
+                        style={{
+                          opacity: isNew ? undefined : 0.85,
+                          animation: isNew ? 'chatWordIn 0.35s ease-out both' : 'none',
+                          animationDelay: isNew ? `${(i - prevCount) * 42}ms` : '0ms',
+                        }}
+                      >
+                        {chunk}
+                      </span>
+                    );
+                  })}
+                  <span style={{ color: GREEN, animation: 'chatCursorBlink 0.7s step-end infinite' }}>▋</span>
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Separator + input */}
