@@ -257,7 +257,7 @@ export default function Home() {
         <>
           <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />
           <ModeSwitcher mode={mode} onChange={handleModeChange} />
-          {termState !== 'terminal-root' && <PathIndicator path={currentPath} />}
+          {termState !== 'terminal-root' && !isProject && <PathIndicator path={currentPath} />}
           <SystemHealth
             sessionCount={session.count}
             soundEnabled={soundEnabled}
@@ -296,7 +296,7 @@ export default function Home() {
           )}
 
           {/* Motion profile toggle */}
-          {termState !== 'terminal-root' && (
+          {termState !== 'terminal-root' && !isProject && (
             <div
               style={{
                 position: 'fixed',
