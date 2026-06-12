@@ -52,6 +52,7 @@ export default function Equity({ onStateChange }: EquityProps) {
   const [active, setActive] = useState<TabId>('thesis');
   const [selected, setSelected] = useState<Company | null>(null);
   const reliance = COMPANIES.find(c => c.id === 'RELIANCE') ?? COMPANIES[0];
+  const chartCompany = selected ?? reliance;
   const [projectOutput, setProjectOutput] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -159,9 +160,9 @@ confidence: 0.81`}
 
       {active === 'chart' && (
         <TerminalBlock>
-          <Prompt command={`chart ${reliance.id}`} />
+          <Prompt command={`chart ${chartCompany.id}`} />
           <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.05em' }}>
-            RELIANCE  ·  NSE  ·  <span style={{ color: STEEL }}>[1D]</span> <span style={{ opacity: 0.45 }}>[5D] [1MO] [3MO]</span>
+            {chartCompany.name}  ·  {chartCompany.exchange}: {chartCompany.id}  ·  <span style={{ color: STEEL }}>[1D]</span> <span style={{ opacity: 0.45 }}>[5D] [1MO] [3MO]</span>
           </div>
           <div style={{ height: '320px', margin: '16px 0', maxWidth: '860px' }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -373,31 +374,30 @@ function CompanySelector({ onSelect }: { onSelect: (company: Company) => void })
   );
 }
 
+function CompanyItem({ company, onSelect }: { company: Company; onSelect: (company: Company) => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={() => onSelect(company)}
+      data-cursor-hover
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ background: 'none', border: 'none', padding: 0, fontFamily: MONO, textAlign: 'left', cursor: 'pointer' }}
+    >
+      <div style={{ fontSize: '13px', color: hover ? STEEL : FG }}>{company.name}</div>
+      <div style={{ fontSize: '11px', color: FG, opacity: 0.45 }}>{company.id} · {company.exchange}</div>
+    </button>
+  );
+}
+
 function CompanyColumn({ title, companies, onSelect }: { title: string; companies: Company[]; onSelect: (company: Company) => void }) {
   return (
     <div>
       <div style={{ fontSize: '13px', color: FG, marginBottom: '6px' }}>{title}</div>
       <MinorSeparator compact />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {companies.map(company => (
-          <button
-            key={company.id}
-            onClick={() => onSelect(company)}
-            data-cursor-hover
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              color: FG,
-              fontFamily: MONO,
-              fontSize: '13px',
-              textAlign: 'left',
-              opacity: 0.85,
-              cursor: 'pointer',
-            }}
-          >
-            {company.id}
-          </button>
+          <CompanyItem key={company.id} company={company} onSelect={onSelect} />
         ))}
       </div>
     </div>
@@ -411,7 +411,7 @@ function AnalysisOutput({ company }: { company: Company }) {
       <Prompt command={`analyse ${company.id}`} />
       <Line text={`Fetching ${symbol} market data...`} style={{ marginTop: '16px', opacity: 0.65 }} />
       <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.06em' }}>
-        {company.name.toUpperCase()}  ·  {company.exchange}: {company.id}
+        {company.name}  ·  {company.exchange}: {company.id}
       </div>
       <MinorSeparator />
 

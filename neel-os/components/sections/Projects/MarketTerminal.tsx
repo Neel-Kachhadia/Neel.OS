@@ -472,7 +472,7 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
               >
                 {COMPANIES.map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.id} · {c.exchange} · {c.name}
+                    {c.name} ({c.id})
                   </option>
                 ))}
               </select>
@@ -481,7 +481,7 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11px' }}>
                     <span style={{ color: AMB, fontWeight: 600 }}>{selected.name}</span>
                     <span style={{ color: DIM }}>·</span>
-                    <span style={{ color: AMB2 }}>{selected.exchange}</span>
+                    <span style={{ color: AMB2 }}>{selected.exchange}: {selected.id}</span>
                     {livePrice && !livePrice.error && (
                       <>
                         <span style={{ color: AMB, fontVariantNumeric: 'tabular-nums' }}>
