@@ -1,33 +1,29 @@
 import type { Metadata } from 'next';
 import { Fraunces, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import ErrorBoundary from '@/components/core/ErrorBoundary';
 import './globals.css';
 
-// Proxy for Editorial New (variable weight 200-800 serif)
-// Swap: place EditorialNew-Variable.woff2 in public/fonts/ and switch to localFont
 const editorialNew = Fraunces({
   subsets: ['latin'],
   weight: ['200', '300', '400', '500', '600', '700', '800'],
   variable: '--font-display',
-  display: 'block',
+  display: 'swap',
   preload: true,
 });
 
-// Proxy for Söhne (body copy humanist sans)
-// Swap: place Sohne-Regular.woff2 in public/fonts/ and switch to localFont
 const sohne = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-body',
-  display: 'block',
+  display: 'swap',
   preload: true,
 });
 
-// JetBrains Mono — all terminal/mono text
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-mono',
-  display: 'block',
+  display: 'swap',
   preload: true,
 });
 
@@ -52,7 +48,9 @@ export default function RootLayout({
       lang="en"
       className={`${editorialNew.variable} ${sohne.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </body>
     </html>
   );
 }

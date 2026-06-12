@@ -78,21 +78,21 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
             desc="AI financial assistant"
             status="LIVE ●"
             statusColor={GREEN}
-            detail="Sub-200ms latency · AWS Lambda · 3K+ users"
+            detail="12-agent LangGraph routing · Isolation Forest anomaly detection · AWS Lambda/S3 · github.com/Neel-Kachhadia/NeuroFin"
           />
           <SystemRow
             name="Equity Research"
             desc="Investment thesis platform"
             status="LIVE ●"
             statusColor={GREEN}
-            detail="RAG + LangGraph · Live NSE/BSE data  ·  Hallucination rate reduced 40% via fine-tuning"
+            detail="RAG-grounded thesis generation · Live NSE/BSE data · Recharts analysis · github.com/Neel-Kachhadia/Equity-research-platform"
           />
           <SystemRow
             name="Market Terminal"
             desc="Bloomberg-grade NSE terminal"
             status="70% ◌"
             statusColor={`rgba(245,240,232,0.6)`}
-            detail="Rust core · Redis · DuckDB · Options Greeks  ·  4 languages simultaneously"
+            detail="Rust core · Redis ticks · DuckDB history · Options/alerts · github.com/Neel-Kachhadia/indian-terminal"
           />
           <SystemRow
             name="NEEL.OS"
@@ -143,7 +143,6 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
             href="/resume.pdf"
             label="DOWNLOAD RESUME"
             download
-            accent
           />
           <ActionLink href="https://github.com/Neel-Kachhadia" label="GITHUB" />
           <ActionLink href="https://linkedin.com/in/neelkachhadia" label="LINKEDIN" />
@@ -223,8 +222,8 @@ function StackRow({ label, items }: { label: string; items: string }) {
   );
 }
 
-function ActionLink({ href, label, download, accent, green }: {
-  href: string; label: string; download?: boolean; accent?: boolean; green?: boolean
+function ActionLink({ href, label, download, green }: {
+  href: string; label: string; download?: boolean; green?: boolean
 }) {
   const borderColor = green ? '#4AFF91' : 'rgba(245,240,232,0.3)';
   const color = green ? '#4AFF91' : FG;

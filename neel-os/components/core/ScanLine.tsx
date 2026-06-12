@@ -15,8 +15,10 @@ export default function ScanLine({ booting = false }: ScanLineProps) {
     const line = lineRef.current;
     if (!line) return;
     const duration = 6000; // ms per full pass
+    let running = true;
 
     const animate = (now: number) => {
+      if (!running) return;
       if (!startRef.current) startRef.current = now;
       const elapsed = (now - startRef.current) % duration;
       const pct = (elapsed / duration) * 100;
@@ -25,7 +27,10 @@ export default function ScanLine({ booting = false }: ScanLineProps) {
     };
 
     rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      running = false;
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return (

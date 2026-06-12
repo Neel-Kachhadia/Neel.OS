@@ -129,17 +129,21 @@ git log      — commit history`}
         <TerminalBlock>
           <Prompt command="cat readme.md" />
           <pre style={{ ...preStyle, marginTop: '16px', maxWidth: '760px' }}>
-{`AI financial assistant. 12 specialist agents
-coordinated via LangGraph. Isolation Forest
-anomaly detection for risk scoring 0–100.
-Adaptive feedback loop. SNS alerts on threshold
-breach. Sub-200ms latency under concurrent load.
+{`Production personal-finance AI assistant. 12 specialist agents
+coordinate via LangGraph across budgeting, tax, risk,
+goals, and recommendations. Isolation Forest flags
+anomalous spend and investment behavior before the
+recommendation layer composes a response.
+
+Adaptive feedback loop. SNS alerts on threshold breach.
+Sub-200ms target latency under concurrent load. Designed
+as an agent pipeline, not a single chatbot wrapper.
 
 Stack: React · Python · LangGraph · AWS Lambda
        S3 · Docker · Groq
 
 Status: DEPLOYED ●
-Repo:   github.com/Neel-Kachhadia/alpha-india`}
+Repo:   github.com/Neel-Kachhadia/NeuroFin`}
           </pre>
         </TerminalBlock>
       )}
@@ -266,17 +270,33 @@ function MinorSeparator({ compact = false }: { compact?: boolean }) {
 function BottomPrompt() {
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={openCommandTerminal}
+      onKeyDown={handlePromptKey}
+      data-cursor-hover
       style={{
         marginTop: '32px',
         paddingTop: '12px',
         borderTop: '1px solid rgba(180,83,9,0.2)',
         fontSize: '13px',
         color: FG,
+        cursor: 'text',
       }}
     >
       root@neel:/projects/neurofin $ <span style={{ color: AMBER }}>_</span>
     </div>
   );
+}
+
+function openCommandTerminal() {
+  window.dispatchEvent(new Event('neel-open-command-terminal'));
+}
+
+function handlePromptKey(e: React.KeyboardEvent<HTMLDivElement>) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  openCommandTerminal();
 }
 
 const preStyle: React.CSSProperties = {

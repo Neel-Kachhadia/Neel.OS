@@ -7,6 +7,7 @@ interface Project {
   pct?: number;
   stack: string;
   description: string;
+  repo: string;
   bgColor: string;
   accentColor: string;
 }
@@ -17,7 +18,8 @@ const PROJECTS: Project[] = [
     name: 'NeuroFin',
     status: 'DEPLOYED',
     stack: 'React · Python · LangGraph · AWS Lambda · S3',
-    description: '12-specialist agent routing. Isolation Forest anomaly detection. Sub-200ms latency.',
+    description: '12-specialist LangGraph routing for budgeting, tax, risk, goals, and adaptive recommendations.',
+    repo: 'github.com/Neel-Kachhadia/NeuroFin',
     bgColor: 'linear-gradient(160deg, #0A0A0A 0%, #3D1A00 100%)',
     accentColor: '#B45309',
   },
@@ -26,7 +28,8 @@ const PROJECTS: Project[] = [
     name: 'Equity Research Platform',
     status: 'DEPLOYED',
     stack: 'React · FastAPI · LangGraph · AWS EC2/S3',
-    description: 'Live market data ingestion. Multi-step LangGraph reasoning. RAG pipelines.',
+    description: 'Live market data, RAG grounding, Recharts visuals, and multi-step thesis construction.',
+    repo: 'github.com/Neel-Kachhadia/Equity-research-platform',
     bgColor: 'linear-gradient(160deg, #0A0A0A 0%, #0D1F35 100%)',
     accentColor: '#94A3B8',
   },
@@ -36,7 +39,8 @@ const PROJECTS: Project[] = [
     status: 'BUILDING',
     pct: 70,
     stack: 'Rust · FastAPI · Redis · DuckDB',
-    description: 'Professional NSE research terminal. Live tick ingestion. Options Greeks in progress.',
+    description: 'Bloomberg-style NSE workstation with tick streams, charts, alerts, options, and DuckDB history.',
+    repo: 'github.com/Neel-Kachhadia/indian-terminal',
     bgColor: 'linear-gradient(180deg, #0A0A0A 0%, #1A1400 100%)',
     accentColor: '#FFB800',
   },
@@ -108,6 +112,20 @@ export default function MobileProject() {
             }}
           >
             {p.stack}
+          </div>
+
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: p.accentColor,
+              opacity: 0.75,
+              lineHeight: 1.4,
+              marginTop: '8px',
+              wordBreak: 'break-word',
+            }}
+          >
+            {p.repo}
           </div>
 
           {p.status === 'BUILDING' && (

@@ -13,20 +13,10 @@ export function setMotionOverride(p: MotionProfile): void {
   window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: p }));
 }
 
-function getInitialProfile(): MotionProfile {
-  if (typeof window === 'undefined') return 'full';
-  const stored = localStorage.getItem(STORAGE_KEY) as MotionProfile | null;
-  if (stored) return stored;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced' : 'full';
-}
-
 export function useMotionProfile(): MotionProfile {
-  // Start with 'full' — identical on server and client, avoids hydration mismatch.
-  // Real value is read in useEffect after mount.
   const [profile, setProfile] = useState<MotionProfile>('full');
 
   useEffect(() => {
-    // Read stored preference after mount
     const stored = localStorage.getItem(STORAGE_KEY) as MotionProfile | null;
     if (stored) {
       setProfile(stored);

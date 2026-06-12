@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 const SIGNALS = [
   { num: '[1]', text: 'Q3 earnings beat by 4.2%',       rel: 0.94 },
@@ -18,7 +18,11 @@ const NODES = [
 
 const CONN = ['──┐', '──┤', '──┤', '──┘'];
 
-export default function ThesisConstruction({ isActive }: { isActive: boolean }) {
+interface ThesisConstructionProps {
+  isActive: boolean;
+}
+
+function ThesisConstruction({ isActive }: ThesisConstructionProps): JSX.Element {
   const [sigVis,  setSigVis]  = useState<boolean[]>(() => Array(4).fill(false));
   const [sigRel,  setSigRel]  = useState<number[]>( () => Array(4).fill(0));
   const [nodeVis, setNodeVis] = useState<boolean[]>(() => Array(4).fill(false));
@@ -191,3 +195,5 @@ export default function ThesisConstruction({ isActive }: { isActive: boolean }) 
     </div>
   );
 }
+
+export default memo(ThesisConstruction);

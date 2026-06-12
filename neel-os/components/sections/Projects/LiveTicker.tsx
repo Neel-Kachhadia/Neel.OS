@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 interface Row { price: number; change: number; pct: number; dir: 'up' | 'dn'; }
 interface Tick { time: string; symbol: string; price: string; dir: 'up' | 'dn'; qty: string; }
@@ -31,7 +31,7 @@ const initRows = (): Record<string, Row> =>
     },
   ]));
 
-export default function LiveTicker() {
+function LiveTicker(): JSX.Element {
   const rowsRef = useRef<Record<string, Row>>(initRows());
   const [rows,       setRows]       = useState<Record<string, Row>>(initRows);
   const [ticks,      setTicks]      = useState<Tick[]>([]);
@@ -203,3 +203,5 @@ export default function LiveTicker() {
     </div>
   );
 }
+
+export default memo(LiveTicker);

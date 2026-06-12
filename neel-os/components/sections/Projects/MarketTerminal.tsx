@@ -119,7 +119,6 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
   const [options,   setOptions]       = useState<OptionRow[]>(() => genOptions(24847));
   const [ticks,     setTicks]         = useState<Tick[]>([]);
   const [alerts,    setAlerts]        = useState<Alert[]>([]);
-  const [alertId,   setAlertId]       = useState(1);
   const [selected,  setSelected]      = useState<Company | null>(() => COMPANIES[0] ?? null);
   const [range,     setRange]         = useState<'1d' | '5d' | '1mo' | '3mo'>('1d');
   const [points,    setPoints]        = useState<HistPoint[]>([]);
@@ -721,7 +720,14 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         )}
 
         {/* Path */}
-        <div style={{ padding: '8px 48px', background: BG, borderTop: '1px solid rgba(255,184,0,0.2)', fontSize: '13px', color: DIM, letterSpacing: '0.05em' }}>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={openCommandTerminal}
+          onKeyDown={handlePromptKey}
+          data-cursor-hover
+          style={{ padding: '8px 48px', background: BG, borderTop: '1px solid rgba(255,184,0,0.2)', fontSize: '13px', color: DIM, letterSpacing: '0.05em', cursor: 'text' }}
+        >
           root@neel:/projects/market-terminal $ <span style={{ color: AMB }}>_</span>
         </div>
       </div>
@@ -733,16 +739,19 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
         </div>
         <pre style={{ fontFamily: MONO, fontSize: '13px', lineHeight: 1.6, color: AMB, opacity: 0.85, whiteSpace: 'pre-wrap', margin: '0 0 32px' }}>
 {`Professional-grade NSE research terminal.
-Live tick ingestion via Redis. Historical data
-via DuckDB. Options Greeks and IV surface
-calculation in progress. 4 languages running
-simultaneously: Rust, Python, SQL, JavaScript.
+Live tick ingestion via Redis, historical data via
+DuckDB, and a Bloomberg-style UI for scanning indices,
+options chains, alerts, and company charts.
+
+Options Greeks and IV surface calculation in progress.
+4 languages running simultaneously across the stack:
+Rust, Python, SQL, JavaScript.
 
 Stack: Rust · FastAPI · Redis · DuckDB
        Python · Tauri (planned)
 
 Status: BUILDING ◌  70%
-Repo:   github.com/Neel-Kachhadia`}
+Repo:   github.com/Neel-Kachhadia/indian-terminal`}
         </pre>
         <div style={{ fontSize: '11px', color: DIM, letterSpacing: '0.12em', marginBottom: '8px' }}>
           BUILD STATUS ────────────────────────────────────────────────────────
@@ -774,6 +783,16 @@ Repo:   github.com/Neel-Kachhadia`}
       </div>
     </section>
   );
+}
+
+function openCommandTerminal() {
+  window.dispatchEvent(new Event('neel-open-command-terminal'));
+}
+
+function handlePromptKey(e: React.KeyboardEvent<HTMLDivElement>) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  openCommandTerminal();
 }
 
 function AmberBtn({ label, active, onClick, small }: { label: string; active: boolean; onClick: () => void; small?: boolean }) {

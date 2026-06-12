@@ -23,8 +23,10 @@ export default function Grain() {
     };
     resize();
     window.addEventListener('resize', resize);
+    let running = true;
 
     const draw = (now: number) => {
+      if (!running) return;
       rafRef.current = requestAnimationFrame(draw);
       if (now - lastRef.current < 150) return;
       lastRef.current = now;
@@ -45,6 +47,7 @@ export default function Grain() {
     rafRef.current = requestAnimationFrame(draw);
 
     return () => {
+      running = false;
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
     };
@@ -58,6 +61,8 @@ export default function Grain() {
       style={{
         position: 'fixed',
         inset: 0,
+        width: '100vw',
+        height: '100vh',
         pointerEvents: 'none',
         zIndex: 9999,
         opacity: motionProfile === 'reduced' ? 0.015 : 0.025,

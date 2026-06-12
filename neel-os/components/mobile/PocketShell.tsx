@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import BottomBar from './BottomBar';
 import MobileProject from './MobileProject';
 import { Session } from '@/lib/session';
@@ -60,13 +60,24 @@ export default function PocketShell({ session, mode, onModeChange }: PocketShell
   const [section, setSection] = useState<Section>('projects');
   const [logTab, setLogTab]   = useState<LogTab>('failures');
   const [copied, setCopied]   = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeMobileMode = mode === 'recruiter' ? 'recruiter' : 'visitor';
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(EMAIL);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => {
+        copiedTimerRef.current = null;
+        setCopied(false);
+      }, 2000);
     } catch {/* ignore */}
   };
 

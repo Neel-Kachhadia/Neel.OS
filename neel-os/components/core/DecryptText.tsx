@@ -5,7 +5,7 @@ import { decrypt } from '@/lib/decrypt';
 
 interface DecryptTextProps {
   text: string;
-  trigger?: boolean; // re-run when this flips true
+  trigger?: boolean;
   soundEnabled?: boolean;
   style?: React.CSSProperties;
   className?: string;
@@ -24,7 +24,7 @@ export default function DecryptText({
   useEffect(() => {
     if (!trigger || hasRun.current) return;
     hasRun.current = true;
-    decrypt(text, setDisplay, undefined, soundEnabled);
+    return decrypt(text, setDisplay, undefined, soundEnabled);
   }, [trigger, text, soundEnabled]);
 
   return (

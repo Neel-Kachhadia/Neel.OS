@@ -53,7 +53,9 @@ export default function Cursor() {
     window.addEventListener('mousedown', onMouseDown);
 
     let last = 0;
+    let running = true;
     const draw = (now: number) => {
+      if (!running) return;
       rafRef.current = requestAnimationFrame(draw);
       const dt = now - last;
       last = now;
@@ -139,6 +141,7 @@ export default function Cursor() {
     rafRef.current = requestAnimationFrame(draw);
 
     return () => {
+      running = false;
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMouseMove);

@@ -27,6 +27,8 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
   const dispMapRef    = useRef<SVGFEDisplacementMapElement>(null);
   const particlesRef  = useRef<Particle[]>([]);
   const rafRef        = useRef<number>(0);
+  const rippleRafRef  = useRef<number>(0);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idCounter     = useRef(0);
 
   const [copied, setCopied] = useState(false);
@@ -38,12 +40,13 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
   const animatingRipple = useRef(false);
 
   const animateRipple = useCallback(() => {
+    if (!animatingRipple.current) return;
     const turb = turbRef.current;
     if (!turb) return;
     freqRef.current += (targetFreq.current - freqRef.current) * 0.08;
     turb.setAttribute('baseFrequency', `${freqRef.current} ${freqRef.current * 0.6}`);
     if (Math.abs(freqRef.current - targetFreq.current) > 0.0001) {
-      requestAnimationFrame(animateRipple);
+      rippleRafRef.current = requestAnimationFrame(animateRipple);
     } else {
       animatingRipple.current = false;
     }
@@ -53,9 +56,17 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
     targetFreq.current = f;
     if (!animatingRipple.current) {
       animatingRipple.current = true;
-      requestAnimationFrame(animateRipple);
+      rippleRafRef.current = requestAnimationFrame(animateRipple);
     }
   }, [animateRipple]);
+
+  useEffect(() => {
+    return () => {
+      animatingRipple.current = false;
+      cancelAnimationFrame(rippleRafRef.current);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Particle loop
   useEffect(() => {
@@ -69,8 +80,10 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
     };
     resize();
     window.addEventListener('resize', resize);
+    let running = true;
 
     const loop = () => {
+      if (!running) return;
       rafRef.current = requestAnimationFrame(loop);
       if (particlesRef.current.length === 0) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -91,6 +104,7 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
+      running = false;
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
     };
@@ -114,7 +128,8 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
     try {
       await navigator.clipboard.writeText(EMAIL);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {/* ignore */}
     spawnParticles(e.clientX, e.clientY);
     if (soundEnabled) playContactChime();
@@ -231,7 +246,6 @@ export default function Transmission({ soundEnabled = false }: TransmissionProps
           const rect = emailRef.current?.getBoundingClientRect();
           if (!rect) return;
           const rx = (e.clientX - rect.left) / rect.width;
-          const ry = (e.clientY - rect.top) / rect.height;
           setHoverScale(1);
           const turb = turbRef.current;
           if (turb) {

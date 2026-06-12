@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 const AGENTS = [
   { label: 'budget-agent',   action: 'analyzing...'  },
@@ -10,7 +10,12 @@ const AGENTS = [
   { label: 'recommendation', action: 'composing...'  },
 ];
 
-export default function AgentTrace({ isActive, runKey = 0 }: { isActive: boolean; runKey?: number }) {
+interface AgentTraceProps {
+  isActive: boolean;
+  runKey?: number;
+}
+
+function AgentTrace({ isActive, runKey = 0 }: AgentTraceProps): JSX.Element {
   const [fills,   setFills]   = useState<boolean[]>(() => Array(5).fill(false));
   const [dones,   setDones]   = useState<boolean[]>(() => Array(5).fill(false));
   const [showOut, setShowOut] = useState(false);
@@ -147,7 +152,7 @@ export default function AgentTrace({ isActive, runKey = 0 }: { isActive: boolean
 
 function OutRow({ label, value, badge, badgeColor, valueColor }: {
   label: string; value: string; badge?: string; badgeColor?: string; valueColor?: string;
-}) {
+}): JSX.Element {
   return (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '11px' }}>
       <span style={{ opacity: 0.4, minWidth: '116px', fontSize: '10px' }}>{label}</span>
@@ -156,3 +161,5 @@ function OutRow({ label, value, badge, badgeColor, valueColor }: {
     </div>
   );
 }
+
+export default memo(AgentTrace);

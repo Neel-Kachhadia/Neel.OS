@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YAHOO_SYMBOLS } from '@/lib/companies';
+import { MARKET_DATA_CACHE_CONTROL } from '@/lib/constants';
+import { getKvConfig } from '@/lib/env';
 
 interface CacheEntry {
   data: unknown;
@@ -8,11 +10,10 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 const rateLimitMap = new Map<string, { count: number; reset: number }>();
+const CACHE_HEADERS = { 'Cache-Control': MARKET_DATA_CACHE_CONTROL };
 
-function getKvConfig() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url: url.replace(/\/$/, ''), token } : null;
+function cachedJson(data: unknown): NextResponse {
+  return NextResponse.json(data, { headers: CACHE_HEADERS });
 }
 
 async function getVercelKvCache(key: string): Promise<CacheEntry | null> {
@@ -107,7 +108,7 @@ async function handleQuote(symbol: string, yahooSymbol: string) {
   const ttl = 15 * 60 * 1000;
 
   const cached = await getCached(cacheKey, ttl);
-  if (cached) return NextResponse.json(cached);
+  if (cached) return cachedJson(cached);
 
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
@@ -129,10 +130,10 @@ async function handleQuote(symbol: string, yahooSymbol: string) {
 
     const data = { symbol, price, previousClose, change, changePct, volume, stale: false };
     await setCache(cacheKey, data, ttl);
-    return NextResponse.json(data);
+    return cachedJson(data);
   } catch {
     const stale = await getCached(cacheKey, Infinity);
-    if (stale) return NextResponse.json({ ...(stale as object), stale: true });
+    if (stale) return cachedJson({ ...(stale as object), stale: true });
     return NextResponse.json({ error: true, message: 'price unavailable', symbol }, { status: 503 });
   }
 }
@@ -142,7 +143,7 @@ async function handleHistorical(symbol: string, yahooSymbol: string, range: stri
   const ttl = range === '1d' ? 5 * 60 * 1000 : 30 * 60 * 1000;
 
   const cached = await getCached(cacheKey, ttl);
-  if (cached) return NextResponse.json(cached);
+  if (cached) return cachedJson(cached);
 
   const intervalMap: Record<string, string> = {
     '1d': '5m', '5d': '15m', '1mo': '1d', '3mo': '1d',
@@ -181,10 +182,10 @@ async function handleHistorical(symbol: string, yahooSymbol: string, range: stri
 
     const data = { symbol, range, points };
     await setCache(cacheKey, data, ttl);
-    return NextResponse.json(data);
+    return cachedJson(data);
   } catch {
     const stale = await getCached(cacheKey, Infinity);
-    if (stale) return NextResponse.json({ ...(stale as object), stale: true });
+    if (stale) return cachedJson({ ...(stale as object), stale: true });
     return NextResponse.json({ error: true, message: 'historical data unavailable', symbol }, { status: 503 });
   }
 }

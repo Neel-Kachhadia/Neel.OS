@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Session } from '@/lib/session';
 import { playBootChime, playBootTick, resumeSystemAudio } from '@/lib/soundEngine';
 
@@ -70,6 +70,19 @@ export default function Boot({ session, onComplete }: BootProps) {
   const [printing, setPrinting] = useState(true);
   const resumeRef  = useRef(true);
   const startRef   = useRef(performance.now());
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const phaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearBootTimers = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (phaseTimeoutRef.current) {
+      clearTimeout(phaseTimeoutRef.current);
+      phaseTimeoutRef.current = null;
+    }
+  }, []);
 
   const formatLine = (text: string): string => {
     const t = ((performance.now() - startRef.current) / 1000).toFixed(3);
@@ -98,30 +111,35 @@ export default function Boot({ session, onComplete }: BootProps) {
 
     setLines([]);
     setPrinting(true);
+    clearBootTimers();
 
     const source = phase === 'return-boot'
       ? getReturnLines(session)
       : getFirstBootLines(session.count);
 
     let i = 0;
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       if (i < source.length) {
         const text = formatLine(source[i].text);
         setLines(prev => [...prev, text]);
         if (text.includes('[OK]')) playBootTick(i);
         i++;
       } else {
-        clearInterval(interval);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         setPrinting(false);
         const delay = phase === 'return-boot' ? 450 : 800;
-        setTimeout(() => {
+        phaseTimeoutRef.current = setTimeout(() => {
+          phaseTimeoutRef.current = null;
           setPhase(phase === 'return-boot' ? 'return-gate' : 'sound-gate');
         }, delay);
       }
     }, 90);
 
-    return () => clearInterval(interval);
-  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+    return clearBootTimers;
+  }, [phase, session, clearBootTimers]);
 
   const handleReturnChoice = (resume: boolean) => {
     resumeRef.current = resume;
@@ -196,6 +214,13 @@ export default function Boot({ session, onComplete }: BootProps) {
 
 function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
   const [chosen, setChosen] = useState<'y' | 'n' | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleChoice = async (v: 'y' | 'n') => {
     if (chosen !== null) return;
@@ -204,7 +229,10 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
       const ready = await resumeSystemAudio();
       if (ready) playBootChime();
     }
-    setTimeout(() => onChoice(v === 'y'), 300);
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      onChoice(v === 'y');
+    }, 300);
   };
 
   return (
@@ -245,11 +273,21 @@ function SoundGate({ onChoice }: { onChoice: (enabled: boolean) => void }) {
 
 function ReturnGate({ onChoice }: { onChoice: (resume: boolean) => void }) {
   const [chosen, setChosen] = useState<'yes' | 'fresh' | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleChoice = (resume: boolean) => {
     if (chosen !== null) return;
     setChosen(resume ? 'yes' : 'fresh');
-    setTimeout(() => onChoice(resume), 260);
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      onChoice(resume);
+    }, 260);
   };
 
   return (

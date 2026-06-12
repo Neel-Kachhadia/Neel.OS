@@ -9,26 +9,33 @@ export function decrypt(
   onUpdate: DecryptCallback,
   onComplete?: () => void,
   soundEnabled = false
-) {
-  const total = 800;
+): () => void {
   const pass1End = 200;
   const pass2Duration = 600;
+  const timers: ReturnType<typeof setTimeout>[] = [];
 
   const rand = () => CHARS[Math.floor(Math.random() * CHARS.length)];
+  const schedule = (callback: () => void, delay: number) => {
+    const id = setTimeout(() => {
+      const idx = timers.indexOf(id);
+      if (idx !== -1) timers.splice(idx, 1);
+      callback();
+    }, delay);
+    timers.push(id);
+  };
 
-  // Pass 1: all chars cycle randomly at 40fps
   const pass1Timer = setInterval(() => {
     onUpdate(targetText.split('').map(() => rand()).join(''));
   }, 25);
 
-  setTimeout(() => {
+  schedule(() => {
     clearInterval(pass1Timer);
 
     const stagger = pass2Duration / Math.max(targetText.length, 1);
     const chars = targetText.split('');
 
     chars.forEach((_, i) => {
-      setTimeout(() => {
+      schedule(() => {
         const locked = targetText.slice(0, i + 1);
         const cycling = targetText.slice(i + 1).split('').map(() => rand()).join('');
         onUpdate(locked + cycling);
@@ -45,13 +52,9 @@ export function decrypt(
     });
   }, pass1End);
 
-  return total;
-}
-// React hook helper — returns current display text
-export function useDecrypt(
-  targetText: string,
-  trigger: boolean,
-  soundEnabled = false
-): string {
-  return targetText; // handled via component state, this is just type export
+  return () => {
+    clearInterval(pass1Timer);
+    timers.forEach(clearTimeout);
+    timers.length = 0;
+  };
 }

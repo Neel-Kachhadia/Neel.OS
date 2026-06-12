@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
@@ -10,7 +10,6 @@ const BG = '#0A0A0A';
 const FG = '#F5F0E8';
 const STEEL = '#94A3B8';
 const GREEN = '#4AFF91';
-const RED = '#B45309';
 const MONO = 'var(--font-mono)';
 
 type TabId = 'thesis' | 'analyse' | 'chart' | 'ask' | 'readme' | 'git';
@@ -173,17 +172,21 @@ confidence: 0.81`}
         <TerminalBlock>
           <Prompt command="cat readme.md" />
           <pre style={{ ...preStyle, marginTop: '16px', maxWidth: '760px' }}>
-{`Investment research platform. LangGraph multi-step
-reasoning for thesis generation. RAG pipelines for
-contextual market data. Fine-tuned LLM behavior for
-reduced hallucination in stock analysis. Live data
-ingestion with Recharts visualization.
+{`Investment research platform for turning live market
+signals into explainable thesis output. LangGraph chains
+fundamentals, momentum, risk, and market context before
+the final recommendation is written.
+
+RAG pipelines ground the model with contextual market
+data. Fine-tuned LLM behavior reduces hallucination in
+stock analysis. Recharts surfaces price action and
+company fundamentals for fast analyst review.
 
 Stack: React · FastAPI · LangGraph · AWS EC2
        S3 · Tailwind · Recharts
 
 Status: DEPLOYED ●
-Repo:   github.com/Neel-Kachhadia`}
+Repo:   github.com/Neel-Kachhadia/Equity-research-platform`}
           </pre>
         </TerminalBlock>
       )}
@@ -246,6 +249,7 @@ function CommandRow({ active, onSelect }: { active: TabId; onSelect: (id: TabId)
         <span key={cmd.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={() => onSelect(cmd.id)}
+            aria-pressed={active === cmd.id}
             data-cursor-hover
             style={{
               background: 'none',
@@ -268,8 +272,8 @@ function CommandRow({ active, onSelect }: { active: TabId; onSelect: (id: TabId)
 }
 
 function CompanySelector({ onSelect }: { onSelect: (company: Company) => void }) {
-  const india = COMPANIES.filter(c => c.region === 'india');
-  const global = COMPANIES.filter(c => c.region === 'global');
+  const india = useMemo(() => COMPANIES.filter(c => c.region === 'india'), []);
+  const global = useMemo(() => COMPANIES.filter(c => c.region === 'global'), []);
 
   return (
     <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'minmax(180px, 260px) minmax(180px, 260px)', gap: '48px' }}>
@@ -411,17 +415,33 @@ function MinorSeparator({ compact = false }: { compact?: boolean }) {
 function BottomPrompt() {
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={openCommandTerminal}
+      onKeyDown={handlePromptKey}
+      data-cursor-hover
       style={{
         marginTop: '32px',
         paddingTop: '12px',
         borderTop: '1px solid rgba(148,163,184,0.2)',
         fontSize: '13px',
         color: FG,
+        cursor: 'text',
       }}
     >
       root@neel:/projects/equity-research $ <span style={{ color: STEEL }}>_</span>
     </div>
   );
+}
+
+function openCommandTerminal() {
+  window.dispatchEvent(new Event('neel-open-command-terminal'));
+}
+
+function handlePromptKey(e: React.KeyboardEvent<HTMLDivElement>) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  openCommandTerminal();
 }
 
 const preStyle: React.CSSProperties = {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
 import { playCommandEnter } from '@/lib/soundEngine';
+import { useUptime } from '@/hooks/useUptime';
 
 interface HeroProps {
   sessionCount: number;
@@ -82,21 +83,10 @@ const SEQUENCES: Record<string, string[]> = {
   ],
 };
 
-const NAV_TARGET: Record<string, string> = {
-  'run neurofin':     '#neurofin',
-  'run equity':       '#equity',
-  'run market':       '#market',
-  'cat identity.md':  '#identity',
-  '/logs':            '#logs',
-  '/stack':           '#stack',
-  'ssh transmission': '#transmission',
-  'sudo hire-neel':   '#transmission',
-};
-
 const PATH_TARGET: Record<string, string> = {
   'run neurofin':     '/neel/projects/neurofin',
-  'run equity':       '/neel/projects/equity',
-  'run market':       '/neel/projects/market',
+  'run equity':       '/neel/projects/equity-research',
+  'run market':       '/neel/projects/market-terminal',
   'cat identity.md':  '/neel/identity',
   '/logs':            '/neel/logs',
   '/stack':           '/neel/stack',
@@ -140,22 +130,6 @@ const HELP_LINES = [
   '──────────────────────────────────────────────────────────',
 ];
 
-function useUptime() {
-  const [uptime, setUptime] = useState('00:00:00');
-  const start = useRef(Date.now());
-  useEffect(() => {
-    const id = setInterval(() => {
-      const s = Math.floor((Date.now() - start.current) / 1000);
-      const h = String(Math.floor(s / 3600)).padStart(2, '0');
-      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-      const sec = String(s % 60).padStart(2, '0');
-      setUptime(`${h}:${m}:${sec}`);
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return uptime;
-}
-
 function TermLine({ text }: { text: string }) {
   if (text === '[returned]') {
     return <span style={{ color: GREEN }}>{text}</span>;
@@ -178,8 +152,9 @@ function TermLine({ text }: { text: string }) {
 
 const PATH_TO_STATE: Record<string, string> = {
   '/neel/projects/neurofin':     'neurofin',
-  '/neel/projects/equity':       'equity',
+  '/neel/projects/equity-research': 'equity',
   '/neel/projects/market':       'market',
+  '/neel/projects/market-terminal': 'market',
   '/neel/identity':              'identity',
   '/neel/logs':                  'logs',
   '/neel/stack':                 'stack',
@@ -209,6 +184,23 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
   const heroRef = useRef<HTMLElement>(null);
   const busyRef = useRef(false);
   const lastCmdRef = useRef('');
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    busyRef.current = false;
+  }, []);
+
+  const schedule = useCallback((callback: () => void, delay: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter(timer => timer !== id);
+      callback();
+    }, delay);
+    timersRef.current.push(id);
+  }, []);
+
+  useEffect(() => clearTimers, [clearTimers]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -249,8 +241,6 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
       observers.push(obs);
     });
 
-    // Section observers not needed in state machine — sections render in separate states
-
     return () => observers.forEach(obs => obs.disconnect());
   }, []);
 
@@ -268,7 +258,6 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
     const normalized = trimmed.toLowerCase();
     if (soundEnabled) playCommandEnter();
 
-    // clear never gets a prompt
     if (normalized === 'clear') {
       setOutputs([]);
       return;
@@ -285,7 +274,6 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
     });
     setHistIdx(-1);
 
-    // Mode commands (hidden, not in help)
     if (normalized === 'debug on')        { onModeChange('debug');     appendToLast([{ text: 'Debug mode enabled.' }]);     return; }
     if (normalized === 'debug off')       { onModeChange('visitor');   appendToLast([{ text: 'Debug mode disabled.' }]);    return; }
     if (normalized === 'recruiter mode')  { onModeChange('recruiter'); appendToLast([{ text: 'Switching to recruiter view...' }]); return; }
@@ -296,14 +284,13 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
     }
 
     const seqLines   = SEQUENCES[normalized];
-    const navTarget  = NAV_TARGET[normalized];
     const pathTarget = PATH_TARGET[normalized];
     const openTarget = OPEN_TARGET[normalized];
 
     if (seqLines) {
       busyRef.current = true;
       seqLines.forEach((line, i) => {
-        setTimeout(() => {
+        schedule(() => {
           setOutputs(prev => {
             const arr = [...prev];
             const last = { ...arr[arr.length - 1], lines: [...arr[arr.length - 1].lines, { text: line }] };
@@ -312,7 +299,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
           if (i === seqLines.length - 1) {
             busyRef.current = false;
             const navDelay = normalized === 'sudo hire-neel' ? 800 : 600;
-            setTimeout(() => {
+            schedule(() => {
               if (pathTarget) {
                 onNavigate(pathTarget);
                 const state = PATH_TO_STATE[pathTarget];
@@ -345,7 +332,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
         return [...arr.slice(0, -1), last];
       });
     }
-  }, [onNavigate, onModeChange, soundEnabled]);
+  }, [onNavigate, onModeChange, onStateChange, schedule, soundEnabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -379,7 +366,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
         { text: '[EXIT] Returning to shell............... [OK]' },
       ] },
     ]);
-    setTimeout(() => {
+    schedule(() => {
       if (lastCmdRef.current) {
         setOutputs(prev => [
           ...prev,
@@ -388,7 +375,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
       }
       inputRef.current?.focus();
     }, 900);
-  }, [activeSection]);
+  }, [activeSection, schedule]);
 
   const pad = isMobile ? '24px' : '48px';
   const leftPad = isMobile ? pad : 'calc(200px + 24px)';
@@ -398,6 +385,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
       {backVisible && (
         <button
           onClick={handleBackNav}
+          aria-label="Return to shell"
           data-cursor-hover
           style={{
             position: 'fixed',
@@ -662,6 +650,7 @@ function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: 
           <button
             key={cmd}
             onClick={e => { e.stopPropagation(); onCommand(cmd); }}
+            type="button"
             style={{
               background: 'none',
               border: '1px solid rgba(245,240,232,0.15)',

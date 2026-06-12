@@ -149,7 +149,7 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
 
     case 'git': {
       if (args[0] === 'log') {
-        const proj = args[1];
+        const proj = normalizeProject(args[1]);
         if (!proj) return { lines: ['git log: specify project'] };
         const log = GIT_LOGS[proj] || GIT_LOGS[`${proj}-research`] || [`git: no log for project '${proj}'`];
         return { lines: [`git log --project ${proj}`, '', ...log] };
@@ -308,16 +308,15 @@ function normalizePath(path: string, currentPath: string): string {
   const withRoot = normalized[0] === 'neel' ? normalized : ['neel', ...normalized];
   const resolved = `/${withRoot.join('/')}`;
   const aliases: Record<string, string> = {
-    '/neel/projects/equity-research': '/neel/projects/equity',
-    '/neel/projects/market-terminal': '/neel/projects/market',
+    '/neel/projects/market': '/neel/projects/market-terminal',
   };
   return aliases[resolved] ?? resolved;
 }
 
 function normalizeProject(project?: string): string | undefined {
   if (!project) return undefined;
-  if (project === 'equity-research') return 'equity';
-  if (project === 'market-terminal') return 'market';
+  if (project === 'equity') return 'equity-research';
+  if (project === 'market') return 'market-terminal';
   return project;
 }
 
@@ -347,7 +346,7 @@ function runProject(project: string): string[] {
       '',
       'Opening case study...',
     ],
-    equity: [
+    'equity-research': [
       'root@neel:/projects$ run equity-research --case-study',
       '',
       '[INIT] Mounting live market data streams...... [OK]',
@@ -359,7 +358,7 @@ function runProject(project: string): string[] {
       '',
       'Opening case study...',
     ],
-    market: [
+    'market-terminal': [
       'root@neel:/projects$ run market-terminal --case-study',
       '',
       '[INIT] Loading Rust core...................... [OK]',

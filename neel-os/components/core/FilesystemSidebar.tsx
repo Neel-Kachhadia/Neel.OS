@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import { FILESYSTEM } from '@/lib/filesystem';
 
 interface FilesystemSidebarProps {
@@ -22,17 +23,17 @@ const TREE_ITEMS: TreeItem[] = [
   { path: '/neel/projects', display: '├── /projects', indent: 1, isDir: true },
   { path: '/neel/projects/neurofin', display: '│   ├── neurofin', indent: 2, isDir: false, status: '[DEPLOYED ●]' },
   { path: '/neel/projects/equity-research', display: '│   ├── equity-research', indent: 2, isDir: false, status: '[DEPLOYED ●]' },
-  { path: '/neel/projects/market', display: '│   └── market-terminal', indent: 2, isDir: false, status: '[BUILDING ◌]' },
+  { path: '/neel/projects/market-terminal', display: '│   └── market-terminal', indent: 2, isDir: false, status: '[BUILDING ◌]' },
   { path: '/neel/stack', display: '├── /stack', indent: 1, isDir: true },
   { path: '/neel/logs', display: '├── /logs', indent: 1, isDir: true },
   { path: '/neel/transmission', display: '└── transmission', indent: 1, isDir: false },
 ];
 
-export default function FilesystemSidebar({ currentPath, onNavigate }: FilesystemSidebarProps) {
-  const navigate = (path: string) => {
+function FilesystemSidebar({ currentPath, onNavigate }: FilesystemSidebarProps): JSX.Element {
+  const navigate = useCallback((path: string) => {
     if (!FILESYSTEM[path]) return;
     onNavigate(path);
-  };
+  }, [onNavigate]);
 
   return (
     <div
@@ -61,6 +62,14 @@ export default function FilesystemSidebar({ currentPath, onNavigate }: Filesyste
           <div
             key={i}
             onClick={() => hasTarget && navigate(item.path)}
+            onKeyDown={(e) => {
+              if (!hasTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+              e.preventDefault();
+              navigate(item.path);
+            }}
+            role={hasTarget ? 'button' : undefined}
+            tabIndex={hasTarget ? 0 : undefined}
+            aria-current={isActive ? 'page' : undefined}
             data-cursor-hover={hasTarget ? true : undefined}
             style={{
               opacity: isActive ? 1 : 0.4,
@@ -88,3 +97,5 @@ export default function FilesystemSidebar({ currentPath, onNavigate }: Filesyste
     </div>
   );
 }
+
+export default memo(FilesystemSidebar);

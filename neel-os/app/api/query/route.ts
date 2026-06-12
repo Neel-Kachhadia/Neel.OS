@@ -1,15 +1,14 @@
 import Groq from 'groq-sdk';
 import { NextRequest, NextResponse } from 'next/server';
+import { GROQ_MODEL, QUERY_STREAM_HEADERS } from '@/lib/constants';
+import { getGroqApiKey, hasGroqApiKey } from '@/lib/env';
 
-// Lazy-init: Groq client must not construct at module scope during build
-// GROQ_API_KEY in .env.local — NEVER NEXT_PUBLIC_
 let _groq: Groq | null = null;
 function getGroq(): Groq {
-  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY ?? '' });
+  if (!_groq) _groq = new Groq({ apiKey: getGroqApiKey() });
   return _groq;
 }
 
-// Simple in-memory rate limit: 10 req/IP/hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const LIMIT = 10;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -119,8 +118,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
-  if (!process.env.GROQ_API_KEY) {
-    // Dev fallback — no API key configured
+  if (!hasGroqApiKey()) {
     return NextResponse.json(
       { error: 'GROQ_API_KEY not configured. Add it to .env.local' },
       { status: 503 }
@@ -129,7 +127,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const stream = await getGroq().chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...(context ? [{ role: 'system' as const, content: `CURRENT_RUNTIME_CONTEXT:\n${context}` }] : []),
@@ -152,7 +150,7 @@ export async function POST(req: NextRequest) {
     });
 
     return new Response(readable, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' },
+      headers: QUERY_STREAM_HEADERS,
     });
   } catch (err) {
     console.error('[api/query]', err);

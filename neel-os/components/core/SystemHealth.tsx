@@ -1,22 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 interface SystemHealthProps {
   sessionCount: number;
   soundEnabled: boolean;
   motionProfile: string;
   activeState: string;
-  onToggleSound?: () => void;
 }
 
-export default function SystemHealth({
+function SystemHealth({
   sessionCount,
   soundEnabled,
   motionProfile,
   activeState,
-  onToggleSound,
-}: SystemHealthProps) {
+}: SystemHealthProps): JSX.Element {
   const [fps, setFps] = useState(60);
   const [heap, setHeap] = useState('--');
   const [uptime, setUptime] = useState('00:00:00');
@@ -26,7 +24,10 @@ export default function SystemHealth({
   const lastFrameRef = useRef(performance.now());
 
   useEffect(() => {
+    let running = true;
+
     const tick = (now: number) => {
+      if (!running) return;
       rafRef.current = requestAnimationFrame(tick);
       const delta = now - lastFrameRef.current;
       lastFrameRef.current = now;
@@ -57,6 +58,7 @@ export default function SystemHealth({
     }, 1000);
 
     return () => {
+      running = false;
       cancelAnimationFrame(rafRef.current);
       clearInterval(interval);
     };
@@ -113,7 +115,7 @@ export default function SystemHealth({
   );
 }
 
-function Row({ label, value, vColor }: { label: string; value: string; vColor?: string }) {
+function Row({ label, value, vColor }: { label: string; value: string; vColor?: string }): JSX.Element {
   return (
     <div style={{ display: 'flex', gap: '8px' }}>
       <span style={{ opacity: 0.6, minWidth: '64px' }}>{label}</span>
@@ -121,3 +123,5 @@ function Row({ label, value, vColor }: { label: string; value: string; vColor?: 
     </div>
   );
 }
+
+export default memo(SystemHealth);

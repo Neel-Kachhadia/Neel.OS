@@ -32,10 +32,32 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
   });
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hireIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hireTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHireTimers = useCallback(() => {
+    if (hireIntervalRef.current) {
+      clearInterval(hireIntervalRef.current);
+      hireIntervalRef.current = null;
+    }
+    if (hireTimeoutRef.current) {
+      clearTimeout(hireTimeoutRef.current);
+      hireTimeoutRef.current = null;
+    }
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+      focusTimeoutRef.current = null;
+    }
+  }, []);
 
   const openTerminal = useCallback(() => {
     setOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+    focusTimeoutRef.current = setTimeout(() => {
+      focusTimeoutRef.current = null;
+      inputRef.current?.focus();
+    }, 50);
   }, []);
 
   useEffect(() => {
@@ -56,8 +78,15 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
   }, [open, openTerminal]);
 
   useEffect(() => {
+    window.addEventListener('neel-open-command-terminal', openTerminal);
+    return () => window.removeEventListener('neel-open-command-terminal', openTerminal);
+  }, [openTerminal]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history]);
+
+  useEffect(() => clearHireTimers, [clearHireTimers]);
 
   const execute = (cmd: string) => {
     const trimmed = cmd.trim();
@@ -80,6 +109,7 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
     if (result.action === 'navigate' && result.actionArg) {
       if (FILESYSTEM[result.actionArg]) {
         onNavigate(result.actionArg);
+        setOpen(false);
       }
     } else if (result.action === 'open' && result.actionArg) {
       if (result.actionArg === '/resume.pdf') {
@@ -98,9 +128,9 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
       setHistory([]);
       return;
     } else if (result.action === 'hire') {
-      // sudo hire-neel: render lines one by one then navigate
+      clearHireTimers();
       let i = 0;
-      const interval = setInterval(() => {
+      hireIntervalRef.current = setInterval(() => {
         if (i < result.lines.length) {
           setHistory(prev => {
             const last = prev[prev.length - 1];
@@ -111,8 +141,8 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
           });
           i++;
         } else {
-          clearInterval(interval);
-          setTimeout(() => {
+          clearHireTimers();
+          hireTimeoutRef.current = setTimeout(() => {
             onNavigate('/neel/transmission');
             setOpen(false);
           }, 500);

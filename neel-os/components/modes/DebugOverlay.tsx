@@ -47,15 +47,18 @@ const PERF_BUDGET = [
 export default function DebugOverlay({ currentPath, motionProfile }: DebugOverlayProps) {
   const [fps,  setFps]  = useState(0);
   const [heap, setHeap] = useState('--');
-  const [colorContrast, setColorContrast] = useState<'pass' | 'warn'>('pass');
   const [showBoundaries, setShowBoundaries] = useState(false);
+  const colorContrast: 'pass' | 'warn' = 'pass';
 
   const frameTimes = useRef<number[]>([]);
   const lastFrame  = useRef(performance.now());
   const rafId      = useRef<number>(0);
 
   useEffect(() => {
+    let running = true;
+
     const tick = (now: number) => {
+      if (!running) return;
       rafId.current = requestAnimationFrame(tick);
       const delta = now - lastFrame.current;
       lastFrame.current = now;
@@ -77,6 +80,7 @@ export default function DebugOverlay({ currentPath, motionProfile }: DebugOverla
     }, 500);
 
     return () => {
+      running = false;
       cancelAnimationFrame(rafId.current);
       clearInterval(interval);
     };

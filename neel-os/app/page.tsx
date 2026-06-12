@@ -8,16 +8,16 @@ import { MotionProfile, useMotionProfile, setMotionOverride } from '@/hooks/useM
 import { gsap } from '@/lib/gsap';
 import { playBackSound, playDestinationArrive } from '@/lib/soundEngine';
 
-import Grain from '@/components/core/Grain';
-import ScanLine from '@/components/core/ScanLine';
-import SystemHealth from '@/components/core/SystemHealth';
-import ModeSwitcher from '@/components/core/ModeSwitcher';
-import PathIndicator from '@/components/core/PathIndicator';
-import FilesystemSidebar from '@/components/core/FilesystemSidebar';
 import Boot from '@/components/sections/Boot';
 import Hero from '@/components/sections/Hero';
 
-// State components lazy-loaded — only one renders at a time
+const Grain         = dynamic(() => import('@/components/core/Grain'),                           { ssr: false, loading: () => null });
+const ScanLine      = dynamic(() => import('@/components/core/ScanLine'),                        { ssr: false, loading: () => null });
+const SystemHealth  = dynamic(() => import('@/components/core/SystemHealth'),                    { ssr: false, loading: () => null });
+const ModeSwitcher  = dynamic(() => import('@/components/core/ModeSwitcher'),                    { ssr: false, loading: () => null });
+const PathIndicator = dynamic(() => import('@/components/core/PathIndicator'),                   { ssr: false, loading: () => null });
+const FilesystemSidebar = dynamic(() => import('@/components/core/FilesystemSidebar'),           { ssr: false, loading: () => null });
+const CommandTerminal = dynamic(() => import('@/components/core/CommandTerminal'),               { ssr: false, loading: () => null });
 const Identity      = dynamic(() => import('@/components/sections/Identity'),                     { ssr: false, loading: () => null });
 const Logs          = dynamic(() => import('@/components/sections/Logs'),                         { ssr: false, loading: () => null });
 const Stack         = dynamic(() => import('@/components/sections/Stack'),                        { ssr: false, loading: () => null });
@@ -65,7 +65,6 @@ const STATE_ACCENTS: Record<TerminalState, string> = {
 const PATH_TO_STATE: Record<string, TerminalState> = {
   '/neel':                         'terminal-root',
   '/neel/projects/neurofin':       'neurofin',
-  '/neel/projects/equity':         'equity',
   '/neel/projects/equity-research':'equity',
   '/neel/projects/market':         'market',
   '/neel/projects/market-terminal':'market',
@@ -88,7 +87,22 @@ export default function Home() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const transitioning = useRef(false);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recruiterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const motionProfile = useMotionProfile();
+
+  const clearPageTimers = useCallback(() => {
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = null;
+    }
+    if (recruiterTimeoutRef.current) {
+      clearTimeout(recruiterTimeoutRef.current);
+      recruiterTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearPageTimers, [clearPageTimers]);
 
   useEffect(() => {
     const s = initSession();
@@ -135,7 +149,9 @@ export default function Home() {
       onComplete: () => {
         setFlashColor(accent);
         setTermState(newState);
-        window.setTimeout(() => {
+        if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+        flashTimeoutRef.current = setTimeout(() => {
+          flashTimeoutRef.current = null;
           setFlashColor(null);
           gsap.to(container, {
             opacity: 1,
@@ -161,10 +177,10 @@ export default function Home() {
     setBooting(false);
   }, [currentPath]);
 
-  const handleModeChange = (m: Mode) => {
+  const handleModeChange = useCallback((m: Mode) => {
     setMode(m);
     updateSession({ mode: m });
-  };
+  }, []);
 
   const handleNavigate = useCallback((path: string) => {
     const state = PATH_TO_STATE[path];
@@ -175,15 +191,26 @@ export default function Home() {
     }
   }, [transitionTo]);
 
-  const handleMotionChange = (p: MotionProfile) => {
+  const handleMotionChange = useCallback((p: MotionProfile) => {
     setMotionOverride(p);
     updateSession({ motionProfile: p });
-  };
+  }, []);
 
   const handleRecruiterTransmission = useCallback(() => {
     handleModeChange('visitor');
-    setTimeout(() => transitionTo('transmission'), 150);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (recruiterTimeoutRef.current) clearTimeout(recruiterTimeoutRef.current);
+    recruiterTimeoutRef.current = setTimeout(() => {
+      recruiterTimeoutRef.current = null;
+      transitionTo('transmission');
+    }, 150);
+  }, [handleModeChange, transitionTo]);
+
+  const handleRecruiterClose = useCallback(() => {
+    handleModeChange('visitor');
+  }, [handleModeChange]);
+
+  const handleStateChange = useCallback((state: string) => {
+    if (state in STATE_PATHS) transitionTo(state as TerminalState);
   }, [transitionTo]);
 
   if (!mounted || !session) return null;
@@ -204,7 +231,7 @@ export default function Home() {
         <Grain />
         <Cursor />
         <RecruiterPanel
-          onClose={() => handleModeChange('visitor')}
+          onClose={handleRecruiterClose}
           onTransmission={handleRecruiterTransmission}
         />
       </>
@@ -237,6 +264,11 @@ export default function Home() {
             motionProfile={motionProfile}
             activeState={termState}
           />
+          <CommandTerminal
+            currentPath={currentPath}
+            onNavigate={handleNavigate}
+            onModeChange={handleModeChange}
+          />
 
           {/* Back button for non-root states */}
           {termState !== 'terminal-root' && (
@@ -267,11 +299,12 @@ export default function Home() {
             <div
               style={{
                 position: 'fixed',
-                bottom: '46px',
+                bottom: '72px',
                 left: 'calc(200px + 24px)',
                 zIndex: 30,
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
+                lineHeight: 1.4,
                 color: 'var(--text-on-black)',
                 display: 'flex',
                 gap: '8px',
@@ -322,7 +355,7 @@ export default function Home() {
               soundEnabled={soundEnabled}
               onNavigate={handleNavigate}
               onModeChange={handleModeChange}
-              onStateChange={s => transitionTo(s as TerminalState)}
+              onStateChange={handleStateChange}
             />
           )}
           {termState === 'neurofin' && (

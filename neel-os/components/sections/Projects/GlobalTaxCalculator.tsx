@@ -409,6 +409,27 @@ export default function GlobalTaxCalculator({
   const [askError, setAskError]           = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const mountedRef = useRef(true);
+  const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAnimationTimers = useCallback(() => {
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current);
+      animationIntervalRef.current = null;
+    }
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      clearAnimationTimers();
+    };
+  }, [clearAnimationTimers]);
 
   // geo detection
   useEffect(() => {
@@ -450,20 +471,21 @@ export default function GlobalTaxCalculator({
   }, [incomeA, cA, cB]);
 
   const runAnimation = useCallback((lines: string[]): Promise<void> => {
+    clearAnimationTimers();
     setAnalyzeLines([]);
     return new Promise(resolve => {
       let i = 0;
-      const interval = setInterval(() => {
+      animationIntervalRef.current = setInterval(() => {
         if (i < lines.length) {
           setAnalyzeLines(prev => [...prev, lines[i]]);
           i++;
         } else {
-          clearInterval(interval);
-          setTimeout(resolve, 300);
+          clearAnimationTimers();
+          animationTimeoutRef.current = setTimeout(resolve, 300);
         }
       }, 200);
     });
-  }, []);
+  }, [clearAnimationTimers]);
 
   const handleCalculate = async () => {
     const n = parseFloat(income.replace(/,/g, ''));
@@ -472,6 +494,7 @@ export default function GlobalTaxCalculator({
     onRunTrace?.();
     setPhase('analyzing');
     await runAnimation(ANALYZE_LINES_SINGLE);
+    if (!mountedRef.current) return;
     const sys = TAX_SYSTEMS[countryKey];
     const primary = sys.systems[0].calculate(n);
     const secondary = countryKey === 'IN' ? sys.systems[1]?.calculate(n) : undefined;
@@ -488,6 +511,7 @@ export default function GlobalTaxCalculator({
     onRunTrace?.();
     setPhase('analyzing');
     await runAnimation(ANALYZE_LINES_COMPARE);
+    if (!mountedRef.current) return;
     const sysA = TAX_SYSTEMS[cA];
     const sysB = TAX_SYSTEMS[cB];
     const resultA = sysA.systems[0].calculate(nA);
