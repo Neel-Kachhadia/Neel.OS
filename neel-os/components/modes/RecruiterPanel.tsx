@@ -3,6 +3,7 @@
 interface RecruiterPanelProps {
   onClose: () => void;
   onTransmission?: () => void;
+  onChat?: () => void;
 }
 
 const MONO = 'var(--font-mono)';
@@ -11,7 +12,7 @@ const BG   = '#0A0A0A';
 const GREEN = '#4AFF91';
 const DIV = 'rgba(245,240,232,0.12)';
 
-export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPanelProps) {
+export default function RecruiterPanel({ onClose, onTransmission, onChat }: RecruiterPanelProps) {
   return (
     <div
       style={{
@@ -150,6 +151,9 @@ export default function RecruiterPanel({ onClose, onTransmission }: RecruiterPan
           {onTransmission && (
             <ActionButton onClick={onTransmission} label="OPEN TRANSMISSION →" />
           )}
+          {onChat && (
+            <ActionButton onClick={onChat} label="CHAT WITH NEEL.OS →" green />
+          )}
           <ActionButton onClick={onClose} label="ENTER SYSTEM →" />
         </div>
 
@@ -254,15 +258,17 @@ function ActionLink({ href, label, download, green }: {
   );
 }
 
-function ActionButton({ onClick, label }: { onClick: () => void; label: string }) {
+function ActionButton({ onClick, label, green }: { onClick: () => void; label: string; green?: boolean }) {
+  const borderColor = green ? '#4AFF91' : 'rgba(245,240,232,0.25)';
+  const color = green ? '#4AFF91' : FG;
   return (
     <button
       onClick={onClick}
       data-cursor-hover
       style={{
         background: 'none',
-        border: `1px solid rgba(245,240,232,0.25)`,
-        color: FG,
+        border: `1px solid ${borderColor}`,
+        color,
         fontFamily: MONO,
         fontSize: '10px',
         padding: '6px 14px',

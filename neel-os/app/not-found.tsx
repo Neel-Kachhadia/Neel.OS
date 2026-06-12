@@ -52,6 +52,7 @@ export default function NotFound() {
               '/stack',
               '/logs',
               '/transmission',
+              'chat',
             ].map(mount => (
               <div key={mount}>{mount}</div>
             ))}

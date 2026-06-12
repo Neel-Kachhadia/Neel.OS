@@ -13,6 +13,7 @@ export const FILESYSTEM: Record<string, FSNode> = {
   '/neel/projects/market-terminal': { target: '#market',       label: 'market-terminal' },
   '/neel/stack':                  { target: '#stack',        label: '/stack' },
   '/neel/logs':                   { target: '#logs',         label: '/logs' },
+  '/neel/chat':                   { target: '#chat',         label: 'chat' },
   '/neel/transmission':           { target: '#transmission', label: 'transmission' },
 };
 

@@ -26,6 +26,7 @@ const TREE_ITEMS: TreeItem[] = [
   { path: '/neel/projects/market-terminal', display: '│   └── market-terminal', indent: 2, isDir: false, status: '[BUILDING ◌]' },
   { path: '/neel/stack', display: '├── /stack', indent: 1, isDir: true },
   { path: '/neel/logs', display: '├── /logs', indent: 1, isDir: true },
+  { path: '/neel/chat', display: '├── chat', indent: 1, isDir: false },
   { path: '/neel/transmission', display: '└── transmission', indent: 1, isDir: false },
 ];
 

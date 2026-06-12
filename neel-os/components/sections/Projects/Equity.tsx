@@ -63,7 +63,13 @@ export default function Equity({ onStateChange }: EquityProps) {
     const cmd = raw.trim().toLowerCase();
     if (!cmd) return;
     setProjectOutput(prev => [...prev, `root@neel:/projects/equity-research $ ${raw}`]);
-    if (['back', 'exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'back') {
+      if (active === 'analyse' && selected !== null) { setSelected(null); }
+      else { onStateChange?.('terminal-root'); }
+      return;
+    }
+    if (['exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'chat')    { onStateChange?.('chat');    return; }
     if (cmd === 'thesis')  { setActive('thesis');  return; }
     if (cmd === 'analyse') { setActive('analyse'); return; }
     if (cmd === 'chart')   { setActive('chart');   return; }
@@ -85,12 +91,12 @@ export default function Equity({ onStateChange }: EquityProps) {
       return;
     }
     if (cmd === 'help') {
-      setProjectOutput(prev => [...prev, 'available: thesis, analyse, chart, ask, readme, git log, back']);
+      setProjectOutput(prev => [...prev, 'available: thesis, analyse, chart, ask, readme, git log, chat, back']);
       return;
     }
     if (cmd === 'clear') { setProjectOutput([]); return; }
-    setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: thesis, analyse, chart, ask, readme, git log, back']);
-  }, [onStateChange]);
+    setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: thesis, analyse, chart, ask, readme, git log, chat, back']);
+  }, [onStateChange, active, selected]);
 
   return (
     <section
@@ -153,13 +159,14 @@ confidence: 0.81`}
               <CompanySelector onSelect={setSelected} />
             </>
           ) : (
-            <AnalysisOutput company={selected} />
+            <AnalysisOutput company={selected} onBack={() => setSelected(null)} />
           )}
         </TerminalBlock>
       )}
 
       {active === 'chart' && (
         <TerminalBlock>
+          {selected !== null && <BackToCompanies onClick={() => { setSelected(null); setActive('analyse'); }} />}
           <Prompt command={`chart ${chartCompany.id}`} />
           <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.05em' }}>
             {chartCompany.name}  ·  {chartCompany.exchange}: {chartCompany.id}  ·  <span style={{ color: STEEL }}>[1D]</span> <span style={{ opacity: 0.45 }}>[5D] [1MO] [3MO]</span>
@@ -404,10 +411,39 @@ function CompanyColumn({ title, companies, onSelect }: { title: string; companie
   );
 }
 
-function AnalysisOutput({ company }: { company: Company }) {
+function BackToCompanies({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      data-cursor-hover
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        fontFamily: MONO,
+        fontSize: '12px',
+        color: STEEL,
+        opacity: hover ? 1 : 0.7,
+        cursor: 'pointer',
+        marginBottom: '16px',
+        display: 'block',
+        letterSpacing: '0.05em',
+        transition: 'opacity 0.15s',
+      }}
+    >
+      ← back to companies
+    </button>
+  );
+}
+
+function AnalysisOutput({ company, onBack }: { company: Company; onBack?: () => void }) {
   const symbol = company.id === 'RELIANCE' ? 'RELIANCE.NS' : company.id;
   return (
     <>
+      {onBack && <BackToCompanies onClick={onBack} />}
       <Prompt command={`analyse ${company.id}`} />
       <Line text={`Fetching ${symbol} market data...`} style={{ marginTop: '16px', opacity: 0.65 }} />
       <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.06em' }}>

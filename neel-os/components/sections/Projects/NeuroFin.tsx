@@ -52,6 +52,7 @@ export default function NeuroFin({ soundEnabled = false, onStateChange }: NeuroF
     if (!cmd) return;
     setProjectOutput(prev => [...prev, `root@neel:/projects/neurofin $ ${raw}`]);
     if (['back', 'exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'chat')       { onStateChange?.('chat');       return; }
     if (cmd === 'trace')     { setActive('trace');     return; }
     if (cmd === 'calculate') { setActive('calculate'); return; }
     if (cmd === 'ask')       { setActive('ask');       return; }

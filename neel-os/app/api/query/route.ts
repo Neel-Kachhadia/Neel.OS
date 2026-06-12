@@ -109,10 +109,17 @@ export async function POST(req: NextRequest) {
 
   let query: string;
   let context: string | null = null;
+  let history: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
     const body = await req.json();
     query = String(body.query ?? '').slice(0, 500);
     context = formatContext(body.context);
+    if (Array.isArray(body.history)) {
+      history = body.history.slice(-18).map((m: { role: string; content: string }) => ({
+        role: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: String(m.content ?? '').slice(0, 800),
+      }));
+    }
     if (!query.trim()) throw new Error('empty');
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -131,6 +138,7 @@ export async function POST(req: NextRequest) {
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...(context ? [{ role: 'system' as const, content: `CURRENT_RUNTIME_CONTEXT:\n${context}` }] : []),
+        ...history,
         { role: 'user', content: query },
       ],
       stream: true,

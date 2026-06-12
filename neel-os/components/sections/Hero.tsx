@@ -55,6 +55,11 @@ const SEQUENCES: Record<string, string[]> = {
     '[MOUNT] Loading stack module............. [OK]',
     'Opening /neel/stack...',
   ],
+  'chat': [
+    '[INIT] Loading chat interface............. [OK]',
+    '[INIT] Connecting query interface......... [OK]',
+    'Opening NEEL.OS chat...',
+  ],
   'ssh transmission': [
     '[SSH]  Generating public channel......... [OK]',
     '[SSH]  Establishing connection........... [OK]',
@@ -90,6 +95,7 @@ const PATH_TARGET: Record<string, string> = {
   'cat identity.md':  '/neel/identity',
   '/logs':            '/neel/logs',
   '/stack':           '/neel/stack',
+  'chat':             '/neel/chat',
   'ssh transmission': '/neel/transmission',
   'sudo hire-neel':   '/neel/transmission',
 };
@@ -118,6 +124,7 @@ const HELP_LINES = [
   '  cat identity.md',
   '  /logs',
   '  /stack',
+  '  chat',
   '',
   'CONTACT',
   '  ssh transmission',
@@ -159,6 +166,7 @@ const PATH_TO_STATE: Record<string, string> = {
   '/neel/logs':                  'logs',
   '/neel/stack':                 'stack',
   '/neel/transmission':          'transmission',
+  '/neel/chat':                  'chat',
 };
 
 export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateChange }: HeroProps) {

@@ -142,6 +142,7 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
     if (!cmd) return;
     setProjectOutput(prev => [...prev, `root@neel:/projects/market-terminal $ ${raw}`]);
     if (['back', 'exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'chat')      { onStateChange?.('chat');   return; }
     if (cmd === 'equity')    { setActiveKey('EQUITY');    return; }
     if (cmd === 'options')   { setActiveKey('OPTIONS');   return; }
     if (cmd === 'charts')    { setActiveKey('CHARTS');    return; }

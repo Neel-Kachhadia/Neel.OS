@@ -26,6 +26,7 @@ const NeuroFin      = dynamic(() => import('@/components/sections/Projects/Neuro
 const Equity        = dynamic(() => import('@/components/sections/Projects/Equity'),              { ssr: false, loading: () => null });
 const MarketTerminal= dynamic(() => import('@/components/sections/Projects/MarketTerminal'),      { ssr: false, loading: () => null });
 const RecruiterPanel= dynamic(() => import('@/components/modes/RecruiterPanel'),                  { ssr: false, loading: () => null });
+const ChatWorld     = dynamic(() => import('@/components/sections/ChatWorld'),                     { ssr: false, loading: () => null });
 const DebugOverlay  = dynamic(() => import('@/components/modes/DebugOverlay'),                    { ssr: false, loading: () => null });
 const Cursor        = dynamic(() => import('@/components/core/Cursor'),                           { ssr: false });
 const PocketShell   = dynamic(() => import('@/components/mobile/PocketShell'),                    { ssr: false });
@@ -38,7 +39,8 @@ type TerminalState =
   | 'identity'
   | 'logs'
   | 'stack'
-  | 'transmission';
+  | 'transmission'
+  | 'chat';
 
 const STATE_PATHS: Record<TerminalState, string> = {
   'terminal-root': '/neel',
@@ -49,6 +51,7 @@ const STATE_PATHS: Record<TerminalState, string> = {
   'logs':          '/neel/logs',
   'stack':         '/neel/stack',
   'transmission':  '/neel/transmission',
+  'chat':          '/neel/chat',
 };
 
 const STATE_ACCENTS: Record<TerminalState, string> = {
@@ -60,6 +63,7 @@ const STATE_ACCENTS: Record<TerminalState, string> = {
   'logs':          'rgba(245,240,232,0.04)',
   'stack':         'rgba(245,240,232,0.04)',
   'transmission':  'rgba(245,240,232,0.04)',
+  'chat':          'rgba(74,255,145,0.06)',
 };
 
 const PATH_TO_STATE: Record<string, TerminalState> = {
@@ -72,6 +76,7 @@ const PATH_TO_STATE: Record<string, TerminalState> = {
   '/neel/logs':                    'logs',
   '/neel/stack':                   'stack',
   '/neel/transmission':            'transmission',
+  '/neel/chat':                    'chat',
 };
 
 export default function Home() {
@@ -89,6 +94,7 @@ export default function Home() {
   const transitioning = useRef(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recruiterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevStateRef = useRef<TerminalState>('terminal-root');
   const motionProfile = useMotionProfile();
 
   const clearPageTimers = useCallback(() => {
@@ -123,6 +129,7 @@ export default function Home() {
 
   const transitionTo = useCallback((newState: TerminalState) => {
     if (transitioning.current || newState === termState) return;
+    if (newState === 'chat') prevStateRef.current = termState;
     transitioning.current = true;
 
     const container = containerRef.current;
@@ -209,6 +216,19 @@ export default function Home() {
     handleModeChange('visitor');
   }, [handleModeChange]);
 
+  const handleChatExit = useCallback(() => {
+    transitionTo(prevStateRef.current);
+  }, [transitionTo]);
+
+  const handleRecruiterChat = useCallback(() => {
+    handleModeChange('visitor');
+    if (recruiterTimeoutRef.current) clearTimeout(recruiterTimeoutRef.current);
+    recruiterTimeoutRef.current = setTimeout(() => {
+      recruiterTimeoutRef.current = null;
+      transitionTo('chat');
+    }, 150);
+  }, [handleModeChange, transitionTo]);
+
   const handleStateChange = useCallback((state: string) => {
     if (state in STATE_PATHS) transitionTo(state as TerminalState);
   }, [transitionTo]);
@@ -233,12 +253,14 @@ export default function Home() {
         <RecruiterPanel
           onClose={handleRecruiterClose}
           onTransmission={handleRecruiterTransmission}
+          onChat={handleRecruiterChat}
         />
       </>
     );
   }
 
   const isProject = termState === 'neurofin' || termState === 'equity' || termState === 'market';
+  const isChat = termState === 'chat';
   const isOffWhite = termState === 'identity';
 
   return (
@@ -257,7 +279,7 @@ export default function Home() {
         <>
           <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />
           <ModeSwitcher mode={mode} onChange={handleModeChange} />
-          {termState !== 'terminal-root' && !isProject && <PathIndicator path={currentPath} />}
+          {termState !== 'terminal-root' && !isProject && !isChat && <PathIndicator path={currentPath} />}
           <SystemHealth
             sessionCount={session.count}
             soundEnabled={soundEnabled}
@@ -296,7 +318,7 @@ export default function Home() {
           )}
 
           {/* Motion profile toggle */}
-          {termState !== 'terminal-root' && !isProject && (
+          {termState !== 'terminal-root' && !isProject && !isChat && (
             <div
               style={{
                 position: 'fixed',
@@ -372,6 +394,7 @@ export default function Home() {
           {termState === 'logs' && <Logs />}
           {termState === 'stack' && <Stack />}
           {termState === 'transmission' && <Transmission soundEnabled={soundEnabled} />}
+          {termState === 'chat' && <ChatWorld onExit={handleChatExit} soundEnabled={soundEnabled} />}
         </div>
       )}
 
@@ -398,4 +421,5 @@ const STATE_BACK_COLOR: Partial<Record<TerminalState, string>> = {
   neurofin: '#B45309',
   equity:   '#94A3B8',
   market:   '#FFB800',
+  chat:     '#4AFF91',
 };

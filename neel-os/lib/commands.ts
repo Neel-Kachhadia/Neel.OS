@@ -198,6 +198,9 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
       return { lines: ["recruiter: did you mean 'recruiter mode'?"] };
     }
 
+    case 'chat':
+      return { lines: ['Opening chat interface...'], action: 'navigate', actionArg: '/neel/chat' };
+
     case 'clear':
       return { lines: [], action: 'clear' };
 
@@ -278,6 +281,9 @@ const HELP_OUTPUT = [
   '  open github        open GitHub profile',
   '  open linkedin      open LinkedIn profile',
   '  cat resume.pdf     download resume',
+  '',
+  'explore',
+  '  chat               open chat interface',
   '',
   'contact',
   '  ssh transmission   open transmission channel',
