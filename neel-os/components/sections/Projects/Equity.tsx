@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import {
   LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
@@ -45,12 +45,51 @@ const CHART_POINTS = [
 
 interface EquityProps {
   soundEnabled?: boolean;
+  onStateChange?: (state: string) => void;
 }
 
-export default function Equity(_props: EquityProps) {
+export default function Equity({ onStateChange }: EquityProps) {
   const [active, setActive] = useState<TabId>('thesis');
   const [selected, setSelected] = useState<Company | null>(null);
   const reliance = COMPANIES.find(c => c.id === 'RELIANCE') ?? COMPANIES[0];
+  const [projectOutput, setProjectOutput] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const handleProjectCommand = useCallback((raw: string) => {
+    const cmd = raw.trim().toLowerCase();
+    if (!cmd) return;
+    setProjectOutput(prev => [...prev, `root@neel:/projects/equity-research $ ${raw}`]);
+    if (['back', 'exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'thesis')  { setActive('thesis');  return; }
+    if (cmd === 'analyse') { setActive('analyse'); return; }
+    if (cmd === 'chart')   { setActive('chart');   return; }
+    if (cmd === 'ask')     { setActive('ask');     return; }
+    if (cmd === 'readme')  { setActive('readme');  return; }
+    if (cmd === 'git log' || cmd === 'git') { setActive('git'); return; }
+    if (cmd.startsWith('analyse ')) {
+      const sym = raw.trim().slice(8).toUpperCase();
+      const company = COMPANIES.find(c => c.id === sym);
+      if (company) { setActive('analyse'); setSelected(company); }
+      else setProjectOutput(prev => [...prev, `symbol not found: ${sym}`]);
+      return;
+    }
+    if (cmd.startsWith('chart ')) {
+      const sym = raw.trim().slice(6).toUpperCase();
+      const company = COMPANIES.find(c => c.id === sym);
+      if (company) { setActive('chart'); setSelected(company); }
+      else setProjectOutput(prev => [...prev, `symbol not found: ${sym}`]);
+      return;
+    }
+    if (cmd === 'help') {
+      setProjectOutput(prev => [...prev, 'available: thesis, analyse, chart, ask, readme, git log, back']);
+      return;
+    }
+    if (cmd === 'clear') { setProjectOutput([]); return; }
+    setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: thesis, analyse, chart, ask, readme, git log, back']);
+  }, [onStateChange]);
 
   return (
     <section
@@ -205,7 +244,55 @@ Repo:   github.com/Neel-Kachhadia/Equity-research-platform`}
         </TerminalBlock>
       )}
 
-      <BottomPrompt />
+      {projectOutput.length > 0 && (
+        <div style={{ paddingLeft: '48px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {projectOutput.map((line, i) => (
+            <div key={i} style={{ fontFamily: MONO, fontSize: '13px', color: 'rgba(245,240,232,0.7)', lineHeight: 1.6 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+      <div
+        style={{
+          marginTop: '32px',
+          paddingTop: '12px',
+          borderTop: '1px solid rgba(148,163,184,0.2)',
+          fontSize: '13px',
+          color: FG,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
+        <span style={{ whiteSpace: 'nowrap', opacity: 0.7 }}>root@neel:/projects/equity-research $</span>
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={e => {
+            if (e.key !== 'Enter') return;
+            const val = inputValue;
+            setInputValue('');
+            handleProjectCommand(val);
+          }}
+          aria-label="Equity command input"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          style={{
+            flex: 1,
+            background: 'none',
+            border: 'none',
+            outline: 'none',
+            color: FG,
+            fontFamily: MONO,
+            fontSize: '13px',
+            caretColor: STEEL,
+          }}
+        />
+      </div>
     </section>
   );
 }
@@ -412,37 +499,6 @@ function MinorSeparator({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function BottomPrompt() {
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={openCommandTerminal}
-      onKeyDown={handlePromptKey}
-      data-cursor-hover
-      style={{
-        marginTop: '32px',
-        paddingTop: '12px',
-        borderTop: '1px solid rgba(148,163,184,0.2)',
-        fontSize: '13px',
-        color: FG,
-        cursor: 'text',
-      }}
-    >
-      root@neel:/projects/equity-research $ <span style={{ color: STEEL }}>_</span>
-    </div>
-  );
-}
-
-function openCommandTerminal() {
-  window.dispatchEvent(new Event('neel-open-command-terminal'));
-}
-
-function handlePromptKey(e: React.KeyboardEvent<HTMLDivElement>) {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  e.preventDefault();
-  openCommandTerminal();
-}
 
 const preStyle: React.CSSProperties = {
   fontFamily: MONO,

@@ -268,6 +268,7 @@ export default function Home() {
             currentPath={currentPath}
             onNavigate={handleNavigate}
             onModeChange={handleModeChange}
+            terminalState={termState}
           />
 
           {/* Back button for non-root states */}
@@ -359,13 +360,13 @@ export default function Home() {
             />
           )}
           {termState === 'neurofin' && (
-            <NeuroFin soundEnabled={soundEnabled} />
+            <NeuroFin soundEnabled={soundEnabled} onStateChange={handleStateChange} />
           )}
           {termState === 'equity' && (
-            <Equity soundEnabled={soundEnabled} />
+            <Equity soundEnabled={soundEnabled} onStateChange={handleStateChange} />
           )}
           {termState === 'market' && (
-            <MarketTerminal soundEnabled={soundEnabled} />
+            <MarketTerminal soundEnabled={soundEnabled} onStateChange={handleStateChange} />
           )}
           {termState === 'identity' && <Identity />}
           {termState === 'logs' && <Logs />}

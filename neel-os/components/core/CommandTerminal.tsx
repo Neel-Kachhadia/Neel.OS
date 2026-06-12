@@ -6,10 +6,13 @@ import { FILESYSTEM } from '@/lib/filesystem';
 import { updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
 
+const PROJECT_STATES = ['neurofin', 'equity', 'market'];
+
 interface CommandTerminalProps {
   onNavigate: (path: string) => void;
   onModeChange: (m: Mode) => void;
   currentPath: string;
+  terminalState?: string;
 }
 
 interface HistoryEntry {
@@ -17,7 +20,7 @@ interface HistoryEntry {
   lines: string[];
 }
 
-export default function CommandTerminal({ onNavigate, onModeChange, currentPath }: CommandTerminalProps) {
+export default function CommandTerminal({ onNavigate, onModeChange, currentPath, terminalState }: CommandTerminalProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -62,6 +65,7 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (PROJECT_STATES.includes(terminalState ?? '')) return;
       if (e.key === '/' && !open && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         openTerminal();
@@ -75,12 +79,16 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, openTerminal]);
+  }, [open, openTerminal, terminalState]);
 
   useEffect(() => {
-    window.addEventListener('neel-open-command-terminal', openTerminal);
-    return () => window.removeEventListener('neel-open-command-terminal', openTerminal);
-  }, [openTerminal]);
+    const handler = () => {
+      if (PROJECT_STATES.includes(terminalState ?? '')) return;
+      openTerminal();
+    };
+    window.addEventListener('neel-open-command-terminal', handler);
+    return () => window.removeEventListener('neel-open-command-terminal', handler);
+  }, [openTerminal, terminalState]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

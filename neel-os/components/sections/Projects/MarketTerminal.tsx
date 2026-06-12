@@ -110,9 +110,9 @@ const GIT_LOG = [
   '8c2d330  system design and schema definition',
 ];
 
-interface MarketTerminalProps { soundEnabled?: boolean }
+interface MarketTerminalProps { soundEnabled?: boolean; onStateChange?: (state: string) => void; }
 
-export default function MarketTerminal({ soundEnabled = false }: MarketTerminalProps) {
+export default function MarketTerminal({ soundEnabled = false, onStateChange }: MarketTerminalProps) {
   const [activeKey, setActiveKey]     = useState<FKey>('EQUITY');
   const [indices,   setIndices]       = useState<Record<string, IndexRow>>(initIndices);
   const [flashSym,  setFlashSym]      = useState<string | null>(null);
@@ -130,6 +130,34 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
   const [portfolioResponse, setPortfolioResponse] = useState('');
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [portfolioError, setPortfolioError] = useState('');
+
+  const [projectOutput, setProjectOutput] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const handleProjectCommand = useCallback((raw: string) => {
+    const cmd = raw.trim().toLowerCase();
+    if (!cmd) return;
+    setProjectOutput(prev => [...prev, `root@neel:/projects/market-terminal $ ${raw}`]);
+    if (['back', 'exit', 'cd ..', 'cd ~'].includes(cmd)) { onStateChange?.('terminal-root'); return; }
+    if (cmd === 'equity')    { setActiveKey('EQUITY');    return; }
+    if (cmd === 'options')   { setActiveKey('OPTIONS');   return; }
+    if (cmd === 'charts')    { setActiveKey('CHARTS');    return; }
+    if (cmd === 'alerts')    { setActiveKey('ALERTS');    return; }
+    if (cmd === 'portfolio') { setActiveKey('PORTFOLIO'); return; }
+    if (cmd === 'help')      { setActiveKey('F1:HELP');   return; }
+    if (cmd.startsWith('chart ')) {
+      const sym = raw.trim().slice(6).toUpperCase();
+      const company = COMPANIES.find(c => c.id === sym);
+      if (company) { setSelected(company); setActiveKey('CHARTS'); }
+      else setProjectOutput(prev => [...prev, `symbol not found: ${sym}`]);
+      return;
+    }
+    if (cmd === 'clear') { setProjectOutput([]); return; }
+    setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: equity, options, charts, alerts, portfolio, help, back']);
+  }, [onStateChange]);
 
   const indicesRef  = useRef(initIndices());
   const tickCountRef = useRef(0);
@@ -719,16 +747,55 @@ export default function MarketTerminal({ soundEnabled = false }: MarketTerminalP
           </div>
         )}
 
-        {/* Path */}
+        {/* Project output + input */}
+        {projectOutput.length > 0 && (
+          <div style={{ padding: '8px 48px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {projectOutput.map((line, i) => (
+              <div key={i} style={{ fontFamily: MONO, fontSize: '13px', color: 'rgba(255,184,0,0.7)', lineHeight: 1.6 }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
         <div
-          role="button"
-          tabIndex={0}
-          onClick={openCommandTerminal}
-          onKeyDown={handlePromptKey}
-          data-cursor-hover
-          style={{ padding: '8px 48px', background: BG, borderTop: '1px solid rgba(255,184,0,0.2)', fontSize: '13px', color: DIM, letterSpacing: '0.05em', cursor: 'text' }}
+          style={{
+            padding: '8px 48px',
+            background: BG,
+            borderTop: '1px solid rgba(255,184,0,0.2)',
+            fontSize: '13px',
+            color: DIM,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
         >
-          root@neel:/projects/market-terminal $ <span style={{ color: AMB }}>_</span>
+          <span style={{ whiteSpace: 'nowrap' }}>root@neel:/projects/market-terminal $</span>
+          <input
+            ref={inputRef}
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return;
+              const val = inputValue;
+              setInputValue('');
+              handleProjectCommand(val);
+            }}
+            aria-label="Market terminal command input"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            style={{
+              flex: 1,
+              background: 'none',
+              border: 'none',
+              outline: 'none',
+              color: AMB,
+              fontFamily: MONO,
+              fontSize: '13px',
+              caretColor: AMB,
+            }}
+          />
         </div>
       </div>
 
@@ -785,15 +852,6 @@ Repo:   github.com/Neel-Kachhadia/indian-terminal`}
   );
 }
 
-function openCommandTerminal() {
-  window.dispatchEvent(new Event('neel-open-command-terminal'));
-}
-
-function handlePromptKey(e: React.KeyboardEvent<HTMLDivElement>) {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  e.preventDefault();
-  openCommandTerminal();
-}
 
 function AmberBtn({ label, active, onClick, small }: { label: string; active: boolean; onClick: () => void; small?: boolean }) {
   const [hover, setHover] = useState(false);
