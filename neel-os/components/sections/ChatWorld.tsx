@@ -249,7 +249,14 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
                 root@neel:~/chat $ {msg.content}
               </div>
             ) : (
-              <div style={{ fontSize: '13px', lineHeight: 1.6, marginTop: '4px' }}>
+              <div
+                style={{
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                  marginTop: '4px',
+                  animation: 'chatMsgIn 0.22s ease-out both',
+                }}
+              >
                 <span style={{ color: GREEN }}>NEEL.OS</span>
                 {'  '}
                 <span style={{ opacity: 0.85 }}>{msg.content}</span>
@@ -262,8 +269,25 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           <div style={{ fontSize: '13px', lineHeight: 1.6, marginTop: '8px' }}>
             <span style={{ color: GREEN }}>NEEL.OS</span>
             {'  '}
-            <span style={{ opacity: 0.85 }}>{streamingText}</span>
-            <span style={{ color: GREEN }}>▋</span>
+            {!streamingText ? (
+              <span style={{ opacity: 0.5 }}>
+                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.0s ease-in-out infinite' }}>●</span>
+                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.2s ease-in-out infinite', marginLeft: '5px' }}>●</span>
+                <span style={{ display: 'inline-block', animation: 'chatDot 1.2s 0.4s ease-in-out infinite', marginLeft: '5px' }}>●</span>
+              </span>
+            ) : (
+              <span>
+                {streamingText.split(/(\s+)/).map((chunk, i) => (
+                  <span
+                    key={i}
+                    style={{ animation: 'chatWordIn 0.14s ease-out both', opacity: 0.85 }}
+                  >
+                    {chunk}
+                  </span>
+                ))}
+                <span style={{ color: GREEN, animation: 'chatCursorBlink 0.7s step-end infinite' }}>▋</span>
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -308,6 +332,24 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           <span>[esc] to exit</span>
         </div>
       </div>
+      <style>{`
+        @keyframes chatCursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        @keyframes chatWordIn {
+          from { opacity: 0; }
+          to { opacity: 0.85; }
+        }
+        @keyframes chatDot {
+          0%, 80%, 100% { opacity: 0.15; }
+          40% { opacity: 0.85; }
+        }
+        @keyframes chatMsgIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </section>
   );
 }
