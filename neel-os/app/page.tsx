@@ -30,7 +30,6 @@ const RecruiterPanel= dynamic(() => import('@/components/modes/RecruiterPanel'),
 const ChatWorld     = dynamic(() => import('@/components/sections/ChatWorld'),                     { ssr: false, loading: () => null });
 const DebugOverlay  = dynamic(() => import('@/components/modes/DebugOverlay'),                    { ssr: false, loading: () => null });
 const Cursor        = dynamic(() => import('@/components/core/Cursor'),                           { ssr: false });
-const PocketShell   = dynamic(() => import('@/components/mobile/PocketShell'),                    { ssr: false });
 
 type TerminalState =
   | 'terminal-root'
@@ -237,16 +236,6 @@ export default function Home() {
 
   if (!mounted || !session) return null;
 
-  if (isMobile) {
-    return (
-      <PocketShell
-        session={session}
-        mode={mode}
-        onModeChange={handleModeChange}
-      />
-    );
-  }
-
   if (mode === 'recruiter') {
     return (
       <>
@@ -278,16 +267,18 @@ export default function Home() {
       {/* Permanent chrome — shown after boot */}
       {!booting && (
         <>
-          {!isChat && <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />}
+          {!isChat && !isMobile && <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />}
           <ModeSwitcher mode={mode} onChange={handleModeChange} />
           {termState !== 'terminal-root' && !isProject && !isChat && <PathIndicator path={currentPath} />}
-          <SystemHealth
-            sessionCount={session.count}
-            soundEnabled={soundEnabled}
-            motionProfile={motionProfile}
-            activeState={termState}
-            uptime={uptime}
-          />
+          {!isMobile && (
+            <SystemHealth
+              sessionCount={session.count}
+              soundEnabled={soundEnabled}
+              motionProfile={motionProfile}
+              activeState={termState}
+              uptime={uptime}
+            />
+          )}
           {!isChat && (
             <CommandTerminal
               currentPath={currentPath}
@@ -305,7 +296,7 @@ export default function Home() {
               style={{
                 position: 'fixed',
                 top: '24px',
-                left: isChat ? '24px' : 'calc(200px + 24px)',
+                left: isChat || isMobile ? '24px' : 'calc(200px + 24px)',
                 zIndex: 100,
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
@@ -322,7 +313,7 @@ export default function Home() {
           )}
 
           {/* Motion profile toggle */}
-          {termState !== 'terminal-root' && !isProject && !isChat && (
+          {termState !== 'terminal-root' && !isProject && !isChat && !isMobile && (
             <div
               style={{
                 position: 'fixed',

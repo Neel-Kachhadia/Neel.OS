@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Mode } from '@/hooks/useMode';
 
 interface ModeSwitcherProps {
@@ -10,18 +11,27 @@ interface ModeSwitcherProps {
 const MODES: Mode[] = ['visitor', 'recruiter', 'debug'];
 
 export default function ModeSwitcher({ mode, onChange }: ModeSwitcherProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   return (
     <div
       style={{
         position: 'fixed',
-        top: '24px',
-        right: '24px',
+        top: isMobile ? '8px' : '24px',
+        right: isMobile ? '12px' : '24px',
         zIndex: 30,
         fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        letterSpacing: '0.1em',
+        fontSize: isMobile ? '8px' : '11px',
+        letterSpacing: isMobile ? '0.06em' : '0.1em',
         display: 'flex',
-        gap: '12px',
+        gap: isMobile ? '6px' : '12px',
         alignItems: 'center',
         color: 'var(--text-on-black)',
       }}

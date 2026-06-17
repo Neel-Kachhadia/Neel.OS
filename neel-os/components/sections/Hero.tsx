@@ -483,16 +483,11 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
           }}
           onClick={() => inputRef.current?.focus()}
         >
-          {!isMobile && (
-            <div style={{ color: FG(0.45), fontSize: '12px', marginBottom: '8px', letterSpacing: '0.03em' }}>
-              NEEL.OS v1.0.0  ·  kernel 6.1.0-neel  ·  Mumbai
-            </div>
-          )}
+          <div style={{ color: FG(0.45), fontSize: isMobile ? '11px' : '12px', marginBottom: '8px', letterSpacing: '0.03em' }}>
+            NEEL.OS v1.0.0  ·  kernel 6.1.0-neel  ·  Mumbai
+          </div>
           <Separator />
-          {isMobile
-            ? <MobileIdentityCard uptime={uptime} onCommand={execute} />
-            : <DesktopIdentityCard uptime={uptime} />
-          }
+          <DesktopIdentityCard uptime={uptime} isMobile={isMobile} />
 
           <Separator style={{ margin: '16px 0' }} />
 
@@ -573,12 +568,16 @@ function Separator({ style }: { style?: React.CSSProperties }) {
   );
 }
 
-function DesktopIdentityCard({ uptime }: { uptime: string }) {
+function DesktopIdentityCard({ uptime, isMobile = false }: { uptime: string; isMobile?: boolean }) {
   return (
-    <div style={{ display: 'flex' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? '18px' : 0,
+    }}>
       {/* Left column */}
-      <div style={{ flex: '0 0 55%', paddingRight: '12px', lineHeight: '1.7' }}>
-        <div style={{ color: FG(1), fontSize: '16px', letterSpacing: '0.05em', fontWeight: 600 }}>
+      <div style={{ flex: isMobile ? '1 1 auto' : '0 0 55%', paddingRight: isMobile ? 0 : '12px', lineHeight: '1.7' }}>
+        <div style={{ color: FG(1), fontSize: isMobile ? '15px' : '16px', letterSpacing: '0.05em', fontWeight: 600 }}>
           NEEL KACHHADIA
         </div>
         <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(100)}</div>
@@ -626,16 +625,18 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
 
       {/* Column separator */}
       <div style={{
-        width: '20px',
+        width: isMobile ? '100%' : '20px',
+        height: isMobile ? '1px' : undefined,
         alignSelf: 'stretch',
-        margin: '0 4px',
-        borderLeft: `1px solid ${FG(0.15)}`,
+        margin: isMobile ? '2px 0' : '0 4px',
+        borderLeft: isMobile ? 'none' : `1px solid ${FG(0.15)}`,
+        borderTop: isMobile ? `1px solid ${FG(0.15)}` : 'none',
       }}>
       </div>
 
       {/* Right column */}
-      <div style={{ flex: '0 0 calc(45% - 20px)', paddingLeft: '12px', lineHeight: '1.7' }}>
-        <div style={{ color: FG(1), fontSize: '16px', letterSpacing: '0.05em', fontWeight: 600 }}>
+      <div style={{ flex: isMobile ? '1 1 auto' : '0 0 calc(45% - 20px)', paddingLeft: isMobile ? 0 : '12px', lineHeight: '1.7' }}>
+        <div style={{ color: FG(1), fontSize: isMobile ? '15px' : '16px', letterSpacing: '0.05em', fontWeight: 600 }}>
           AVAILABLE COMMANDS
         </div>
         <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(100)}</div>
@@ -658,61 +659,6 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
         <div>open linkedin</div>
         <div style={{ height: '1.7em' }} />
         <div>sudo hire</div>
-      </div>
-    </div>
-  );
-}
-
-function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: (cmd: string) => void }) {
-  const CMDS = [
-    'run neurofin', 'run equity', 'run market',
-    'cat identity.md', '/logs', '/stack', 'chat',
-    'ssh transmission', 'cat resume.pdf', 'open github', 'open linkedin',
-    'sudo hire',
-  ];
-  return (
-    <div style={{ lineHeight: '1.7' }}>
-      <div style={{ color: FG(1), fontSize: '14px', fontWeight: 600 }}>NEEL KACHHADIA</div>
-      <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(50)}</div>
-      <div>B.Tech Electronics &amp; Telecom</div>
-      <div>B.Tech · DJSCE Mumbai · 2024-28</div>
-      <div>Honours in VLSI</div>
-      <div style={{ height: '1em' }} />
-      <div>Building systems. Shipping fast. Mumbai.</div>
-      <div style={{ height: '1em' }} />
-      <div style={{ color: FG(0.45) }}>SYSTEMS</div>
-      <div><span style={{ color: GREEN }}>● </span>neurofin <span style={{ color: GREEN }}>[LIVE]</span></div>
-      <div><span style={{ color: GREEN }}>● </span>equity-research <span style={{ color: GREEN }}>[LIVE]</span></div>
-      <div><span style={{ color: FG(0.4) }}>◌ </span>market-terminal <span style={{ color: FG(0.6) }}>[70%]</span></div>
-      <div style={{ height: '1em' }} />
-      <div>
-        <span style={{ color: GREEN }}>ONLINE ●</span>
-        <span style={{ color: FG(0.45) }}> uptime: </span>
-        <span style={{ color: GREEN }}>{uptime}</span>
-      </div>
-      <div style={{ height: '1em' }} />
-      <div style={{ color: FG(0.2), overflow: 'hidden', whiteSpace: 'nowrap' }}>{'─'.repeat(50)}</div>
-      <div style={{ color: FG(0.45), margin: '8px 0' }}>TAP TO RUN</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-        {CMDS.map(cmd => (
-          <button
-            key={cmd}
-            onClick={e => { e.stopPropagation(); onCommand(cmd); }}
-            type="button"
-            style={{
-              background: 'none',
-              border: '1px solid rgba(245,240,232,0.15)',
-              color: FG(0.85),
-              fontFamily: MONO,
-              fontSize: '11px',
-              padding: '4px 8px',
-              cursor: 'pointer',
-              borderRadius: '2px',
-            }}
-          >
-            {cmd}
-          </button>
-        ))}
       </div>
     </div>
   );

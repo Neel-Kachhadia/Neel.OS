@@ -68,6 +68,7 @@ export default function Boot({ session, onComplete }: BootProps) {
   const [phase, setPhase] = useState<BootPhase>(isReturnVisit ? 'return-boot' : 'first-boot');
   const [lines, setLines] = useState<string[]>([]);
   const [printing, setPrinting] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const resumeRef  = useRef(true);
   const startRef   = useRef(performance.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -101,6 +102,13 @@ export default function Boot({ session, onComplete }: BootProps) {
       </>
     );
   };
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const isPrinting = phase === 'first-boot' || phase === 'return-boot' || phase === 'fresh-boot';
@@ -165,13 +173,13 @@ export default function Boot({ session, onComplete }: BootProps) {
         justifyContent: 'center',
         alignItems: 'flex-start',
         padding: 'clamp(24px, 5vw, 80px)',
-        paddingLeft: 'calc(clamp(24px, 5vw, 80px) + 200px)',
+        paddingLeft: isMobile ? '24px' : 'calc(clamp(24px, 5vw, 80px) + 200px)',
       }}
     >
       <pre
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: '13px',
+          fontSize: isMobile ? '11px' : '13px',
           lineHeight: '1.6',
           color: 'var(--text-on-black)',
           margin: 0,
