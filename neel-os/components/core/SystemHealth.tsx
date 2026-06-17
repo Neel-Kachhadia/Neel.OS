@@ -7,6 +7,7 @@ interface SystemHealthProps {
   soundEnabled: boolean;
   motionProfile: string;
   activeState: string;
+  uptime: string;
 }
 
 function SystemHealth({
@@ -14,12 +15,11 @@ function SystemHealth({
   soundEnabled,
   motionProfile,
   activeState,
+  uptime,
 }: SystemHealthProps): JSX.Element {
   const [fps, setFps] = useState(60);
   const [heap, setHeap] = useState('--');
-  const [uptime, setUptime] = useState('00:00:00');
   const frameTimesRef = useRef<number[]>([]);
-  const pageLoadRef = useRef(Date.now());
   const rafRef = useRef<number>(0);
   const lastFrameRef = useRef(performance.now());
 
@@ -48,13 +48,6 @@ function SystemHealth({
         const mem = (performance as Performance & { memory: { usedJSHeapSize: number } }).memory;
         setHeap(Math.round(mem.usedJSHeapSize / 1048576) + 'mb');
       }
-
-      const s = Math.floor((Date.now() - pageLoadRef.current) / 1000);
-      const m = Math.floor(s / 60);
-      const h = Math.floor(m / 60);
-      setUptime(
-        `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-      );
     }, 1000);
 
     return () => {

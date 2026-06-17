@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
 import { playCommandEnter } from '@/lib/soundEngine';
-import { useUptime } from '@/hooks/useUptime';
 
 interface HeroProps {
   sessionCount: number;
@@ -12,9 +11,15 @@ interface HeroProps {
   onNavigate: (path: string) => void;
   onModeChange: (m: Mode) => void;
   onStateChange?: (state: string) => void;
+  uptime: string;
 }
 
-interface OutputLine { text: string }
+interface OutputLine {
+  text: string;
+  href?: string;
+  download?: string;
+  accent?: boolean;
+}
 interface OutputEntry { prompt?: string; lines: OutputLine[] }
 
 const MONO = 'var(--font-mono)';
@@ -78,11 +83,17 @@ const SEQUENCES: Record<string, string[]> = {
   ],
   'sudo hire-neel': [
     '[sudo] password for visitor: ████████',
-    'Verifying credentials...',
-    '...',
-    'Access granted.',
-    'Initiating transmission channel...',
-    'ssh neel@transmission connected.',
+    'Escalating hiring privileges...',
+    'Verifying contact vectors...',
+    'Mounting direct reach console...',
+    'Ready. Choose a channel below.',
+  ],
+  'sudo hire': [
+    '[sudo] password for visitor: ████████',
+    'Escalating hiring privileges...',
+    'Verifying contact vectors...',
+    'Mounting direct reach console...',
+    'Ready. Choose a channel below.',
   ],
 };
 
@@ -95,7 +106,6 @@ const PATH_TARGET: Record<string, string> = {
   '/stack':           '/neel/stack',
   'chat':             '/neel/chat',
   'ssh transmission': '/neel/transmission',
-  'sudo hire-neel':   '/neel/transmission',
 };
 
 const OPEN_TARGET: Record<string, string> = {
@@ -130,13 +140,38 @@ const HELP_LINES = [
   '  open github',
   '  open linkedin',
   '',
+  '  sudo hire',
   '  sudo hire-neel',
   '',
   '──────────────────────────────────────────────────────────',
 ];
 
-function TermLine({ text }: { text: string }) {
-  const safe = text ?? '';
+const HIRE_ACTION_LINES: OutputLine[] = [
+  { text: '[email now] neel1234kachhadia@gmail.com', href: 'mailto:neel1234kachhadia@gmail.com', accent: true },
+  { text: '[message on linkedin] linkedin.com/in/neelkachhadia', href: 'https://linkedin.com/in/neelkachhadia' },
+  { text: '[download resume] resume.pdf', href: '/resume.pdf', download: 'Neel_Kachhadia_Resume.pdf' },
+  { text: '[view github] github.com/Neel-Kachhadia', href: 'https://github.com/Neel-Kachhadia' },
+];
+
+function TermLine({ line }: { line: OutputLine }) {
+  const safe = line.text ?? '';
+  if (line.href) {
+    return (
+      <a
+        href={line.href}
+        target={line.href.startsWith('mailto:') || line.download ? '_self' : '_blank'}
+        rel={line.href.startsWith('mailto:') || line.download ? undefined : 'noopener noreferrer'}
+        download={line.download}
+        data-cursor-hover
+        style={{
+          color: line.accent ? GREEN : FG(0.85),
+          textDecoration: 'none',
+        }}
+      >
+        {safe}
+      </a>
+    );
+  }
   if (safe === '[returned]') {
     return <span style={{ color: GREEN }}>{safe}</span>;
   }
@@ -168,7 +203,7 @@ const PATH_TO_STATE: Record<string, string> = {
   '/neel/chat':                  'chat',
 };
 
-export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateChange }: HeroProps) {
+export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateChange, uptime }: HeroProps) {
   const [outputs, setOutputs] = useState<OutputEntry[]>([]);
   const [input, setInput] = useState('');
   const [cmdHistory, setCmdHistory] = useState<string[]>(() => {
@@ -185,7 +220,6 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
   const [activeSection, setActiveSection] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
-  const uptime = useUptime();
   const inputRef = useRef<HTMLInputElement>(null);
   const outputEndRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -305,9 +339,16 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
           });
           if (i === seqLines.length - 1) {
             busyRef.current = false;
-            const navDelay = normalized === 'sudo hire-neel' ? 800 : 600;
+            const isHireCommand = normalized === 'sudo hire' || normalized === 'sudo hire-neel';
+            const navDelay = isHireCommand ? 800 : 600;
             schedule(() => {
-              if (pathTarget) {
+              if (isHireCommand) {
+                setOutputs(prev => {
+                  const arr = [...prev];
+                  const last = arr[arr.length - 1];
+                  return [...arr.slice(0, -1), { ...last, lines: [...last.lines, { text: '' }, ...HIRE_ACTION_LINES] }];
+                });
+              } else if (pathTarget) {
                 onNavigate(pathTarget);
                 const state = PATH_TO_STATE[pathTarget];
                 if (state && onStateChange) onStateChange(state);
@@ -465,7 +506,7 @@ export default function Hero({ soundEnabled, onNavigate, onModeChange, onStateCh
                 )}
                 {entry.lines.map((line, j) => (
                   <div key={j} style={{ paddingLeft: entry.prompt ? '2px' : 0 }}>
-                    <TermLine text={line.text} />
+                    <TermLine line={line} />
                   </div>
                 ))}
               </div>
@@ -617,6 +658,7 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
         <div>open github</div>
         <div>open linkedin</div>
         <div style={{ height: '1.7em' }} />
+        <div>sudo hire</div>
         <div>sudo hire-neel</div>
       </div>
     </div>
@@ -628,7 +670,7 @@ function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: 
     'run neurofin', 'run equity', 'run market',
     'cat identity.md', '/logs', '/stack', 'chat',
     'ssh transmission', 'cat resume.pdf', 'open github', 'open linkedin',
-    'sudo hire-neel',
+    'sudo hire', 'sudo hire-neel',
   ];
   return (
     <div style={{ lineHeight: '1.7' }}>

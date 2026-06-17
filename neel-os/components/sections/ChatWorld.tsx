@@ -212,23 +212,6 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           maxWidth: '1200px',
         }}>
           <span>NEEL.OS  ·  CHAT INTERFACE  ·  <span style={{ color: GREEN }}>ONLINE ●</span></span>
-          <button
-            onClick={() => { abortRef.current?.abort(); onExit(); }}
-            data-cursor-hover
-            style={{
-              background: 'none',
-              border: 'none',
-              color: FG,
-              fontFamily: MONO,
-              fontSize: '12px',
-              cursor: 'pointer',
-              opacity: 0.5,
-              padding: 0,
-              letterSpacing: '0.05em',
-            }}
-          >
-            ← exit chat
-          </button>
         </div>
         <div style={{ color: 'rgba(148,163,184,0.3)', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: '8px' }}>
           {'━'.repeat(120)}
@@ -312,47 +295,45 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
             </div>
           );
         })()}
-      </div>
 
-      {/* Separator + input */}
-      <div style={{ flexShrink: 0, paddingBottom: '24px' }}>
-        <div style={{ color: 'rgba(148,163,184,0.2)', overflow: 'hidden', whiteSpace: 'nowrap', marginBottom: '12px' }}>
-          {'─'.repeat(80)}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: FG }}>
-          <span style={{ opacity: 0.7, whiteSpace: 'nowrap' }}>root@neel:~/chat $</span>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => {
-              if (e.key !== 'Enter') return;
-              const val = input;
-              setInput('');
-              sendMessage(val);
-            }}
-            disabled={!bootDone}
-            aria-label="Chat input"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              color: FG,
-              fontFamily: MONO,
-              fontSize: '13px',
-              caretColor: GREEN,
-            }}
-          />
-        </div>
-        <div style={{ marginTop: '8px', fontSize: '10px', opacity: 0.3, display: 'flex', justifyContent: 'space-between', letterSpacing: '0.05em' }}>
-          <span>type &apos;exit&apos; or &apos;clear&apos; to reset</span>
-          <span>[esc] to exit</span>
-        </div>
+        {!streaming && (
+          <div style={{ marginTop: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: FG }}>
+              <span style={{ opacity: 0.7, whiteSpace: 'nowrap' }}>root@neel:~/chat $</span>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key !== 'Enter') return;
+                  const val = input;
+                  setInput('');
+                  sendMessage(val);
+                }}
+                disabled={!bootDone}
+                aria-label="Chat input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                style={{
+                  flex: 1,
+                  background: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  color: FG,
+                  fontFamily: MONO,
+                  fontSize: '13px',
+                  caretColor: GREEN,
+                  minWidth: 0,
+                }}
+              />
+            </div>
+            <div style={{ marginTop: '8px', fontSize: '10px', opacity: 0.3, letterSpacing: '0.05em' }}>
+              type &apos;exit&apos; or &apos;clear&apos;
+            </div>
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes chatCursorBlink {

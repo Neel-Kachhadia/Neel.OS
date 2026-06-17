@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Session, initSession, updateSession } from '@/lib/session';
 import { Mode } from '@/hooks/useMode';
 import { MotionProfile, useMotionProfile, setMotionOverride } from '@/hooks/useMotionProfile';
+import { useUptime } from '@/hooks/useUptime';
 import { gsap } from '@/lib/gsap';
 import { playBackSound, playDestinationArrive } from '@/lib/soundEngine';
 
@@ -96,6 +97,7 @@ export default function Home() {
   const recruiterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevStateRef = useRef<TerminalState>('terminal-root');
   const motionProfile = useMotionProfile();
+  const uptime = useUptime();
 
   const clearPageTimers = useCallback(() => {
     if (flashTimeoutRef.current) {
@@ -284,6 +286,7 @@ export default function Home() {
             soundEnabled={soundEnabled}
             motionProfile={motionProfile}
             activeState={termState}
+            uptime={uptime}
           />
           {!isChat && (
             <CommandTerminal
@@ -297,7 +300,7 @@ export default function Home() {
           {/* Back button for non-root states */}
           {termState !== 'terminal-root' && (
             <button
-              onClick={() => transitionTo('terminal-root')}
+              onClick={() => { if (isChat) handleChatExit(); else transitionTo('terminal-root'); }}
               data-cursor-hover
               style={{
                 position: 'fixed',
@@ -380,6 +383,7 @@ export default function Home() {
               onNavigate={handleNavigate}
               onModeChange={handleModeChange}
               onStateChange={handleStateChange}
+              uptime={uptime}
             />
           )}
           {termState === 'neurofin' && (

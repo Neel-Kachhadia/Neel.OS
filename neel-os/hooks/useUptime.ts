@@ -22,14 +22,16 @@ export function formatDayHourMinuteUptime(elapsedMs: number): string {
 
 export function useUptime(
   formatter: UptimeFormatter = formatClockUptime,
-  intervalMs = 1000
+  intervalMs = 1000,
+  startedAt?: number
 ): string {
-  const start = useRef(Date.now());
-  const [uptime, setUptime] = useState(() => formatter(0));
+  const start = useRef(startedAt ?? Date.now());
+  const [uptime, setUptime] = useState(() => formatter(Math.max(0, Date.now() - start.current)));
 
   useEffect(() => {
+    setUptime(formatter(Math.max(0, Date.now() - start.current)));
     const id = setInterval(() => {
-      setUptime(formatter(Date.now() - start.current));
+      setUptime(formatter(Math.max(0, Date.now() - start.current)));
     }, intervalMs);
     return () => clearInterval(id);
   }, [formatter, intervalMs]);

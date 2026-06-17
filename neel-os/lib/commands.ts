@@ -205,7 +205,7 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
       return { lines: [], action: 'clear' };
 
     case 'sudo': {
-      if (args[0] === 'hire-neel') {
+      if (args[0] === 'hire' || args[0] === 'hire-neel') {
         return { lines: HIRE_SEQUENCE, action: 'hire' };
       }
       return { lines: [`sudo: command not found: ${args.join(' ')}`] };
@@ -223,11 +223,10 @@ export function parseCommand(input: string, currentPath = '/neel'): CommandResul
 
 const HIRE_SEQUENCE = [
   '[sudo] password for visitor: ████████',
-  'Checking permissions...',
-  '...',
-  'Permission granted.',
-  'Initiating transmission channel...',
-  'ssh neel@transmission connected.',
+  'Escalating hiring privileges...',
+  'Verifying contact vectors...',
+  'Mounting direct reach console...',
+  'Ready. Choose a channel below.',
 ];
 
 const IDENTITY_LINES = [
@@ -287,7 +286,8 @@ const HELP_OUTPUT = [
   '',
   'contact',
   '  ssh transmission   open transmission channel',
-  '  sudo hire-neel     ...',
+  '  sudo hire          open direct reach console',
+  '  sudo hire-neel     open direct reach console',
   '',
   '──────────────────────────────────────────────────────────',
 ];

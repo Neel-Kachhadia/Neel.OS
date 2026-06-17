@@ -18,7 +18,21 @@ interface CommandTerminalProps {
 interface HistoryEntry {
   input?: string;
   lines: string[];
+  actions?: TerminalAction[];
 }
+
+interface TerminalAction {
+  label: string;
+  href: string;
+  download?: string;
+}
+
+const HIRE_ACTIONS: TerminalAction[] = [
+  { label: 'EMAIL NEEL', href: 'mailto:neel1234kachhadia@gmail.com' },
+  { label: 'MESSAGE ON LINKEDIN', href: 'https://linkedin.com/in/neelkachhadia' },
+  { label: 'DOWNLOAD RESUME', href: '/resume.pdf', download: 'Neel_Kachhadia_Resume.pdf' },
+  { label: 'VIEW GITHUB', href: 'https://github.com/Neel-Kachhadia' },
+];
 
 export default function CommandTerminal({ onNavigate, onModeChange, currentPath, terminalState }: CommandTerminalProps) {
   const [open, setOpen] = useState(false);
@@ -36,17 +50,12 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath,
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hireIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hireTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearHireTimers = useCallback(() => {
     if (hireIntervalRef.current) {
       clearInterval(hireIntervalRef.current);
       hireIntervalRef.current = null;
-    }
-    if (hireTimeoutRef.current) {
-      clearTimeout(hireTimeoutRef.current);
-      hireTimeoutRef.current = null;
     }
     if (focusTimeoutRef.current) {
       clearTimeout(focusTimeoutRef.current);
@@ -150,10 +159,12 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath,
           i++;
         } else {
           clearHireTimers();
-          hireTimeoutRef.current = setTimeout(() => {
-            onNavigate('/neel/transmission');
-            setOpen(false);
-          }, 500);
+          setHistory(prev => {
+            const last = prev[prev.length - 1];
+            if (!last?.input?.includes('sudo')) return prev;
+            return [...prev.slice(0, -1), { ...last, actions: HIRE_ACTIONS }];
+          });
+          setTimeout(() => inputRef.current?.focus(), 50);
         }
       }, 300);
     }
@@ -227,6 +238,32 @@ export default function CommandTerminal({ onNavigate, onModeChange, currentPath,
             {entry.lines.map((line, j) => (
               <CommandLine key={j} line={line} />
             ))}
+            {entry.actions && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                {entry.actions.map(action => (
+                  <a
+                    key={action.label}
+                    href={action.href}
+                    target={action.href.startsWith('mailto:') || action.download ? '_self' : '_blank'}
+                    rel={action.href.startsWith('mailto:') || action.download ? undefined : 'noopener noreferrer'}
+                    download={action.download}
+                    data-cursor-hover
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.08em',
+                      color: action.label.includes('EMAIL') ? 'var(--online)' : 'var(--text-on-black)',
+                      border: `1px solid ${action.label.includes('EMAIL') ? 'rgba(74,255,145,0.6)' : 'rgba(245,240,232,0.25)'}`,
+                      padding: '5px 12px',
+                      textDecoration: 'none',
+                      opacity: 0.85,
+                    }}
+                  >
+                    [{action.label}]
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         <div ref={bottomRef} />
