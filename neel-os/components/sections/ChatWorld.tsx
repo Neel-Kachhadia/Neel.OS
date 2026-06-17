@@ -190,10 +190,10 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
       id="chat"
       style={{
         background: BG,
-        height: '100vh',
+        height: '100dvh',
         color: FG,
         fontFamily: MONO,
-        padding: '80px 48px 0 calc(200px + 48px)',
+        padding: '80px clamp(24px, 3vw, 56px) 0',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -209,7 +209,7 @@ export default function ChatWorld({ onExit }: ChatWorldProps) {
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '24px',
-          maxWidth: '960px',
+          maxWidth: '1200px',
         }}>
           <span>NEEL.OS  ·  CHAT INTERFACE  ·  <span style={{ color: GREEN }}>ONLINE ●</span></span>
           <button

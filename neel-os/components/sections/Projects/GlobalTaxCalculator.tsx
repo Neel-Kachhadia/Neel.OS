@@ -276,15 +276,24 @@ function CompareOutput({ result, onSwap, onReset }: { result: CompareResult; onS
   const winnerC = TAX_SYSTEMS[winnerKey];
   const isUAEWin = winnerKey === 'AE';
 
+  const comparisonGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(220px, 280px) 1px minmax(220px, 280px)',
+    columnGap: '24px',
+    alignItems: 'start',
+    width: 'fit-content',
+    maxWidth: '100%',
+  };
+
   const comparisonColumnStyle = (isWinner: boolean): React.CSSProperties => ({
-    flex: 1,
+    minWidth: 0,
     padding: '0',
     opacity: isWinner ? 1 : 0.75,
   });
 
   return (
     <div style={{ marginTop: '8px' }}>
-      <div style={{ display: 'flex', gap: '12px' }}>
+      <div style={comparisonGridStyle}>
         <div style={comparisonColumnStyle(countryA === winnerKey)}>
           <div style={{ ...mono, fontSize: '13px', color: FG, marginBottom: '10px', fontWeight: 600 }}>
             {cA.flag} {cA.name.toUpperCase()}
@@ -665,7 +674,14 @@ export default function GlobalTaxCalculator({
 
       {/* ── COMPARE MODE INPUT ───────────────────────────────────── */}
       {mode === 'compare' && phase === 'idle' && (
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(220px, 280px) 1px minmax(220px, 280px)',
+          columnGap: '24px',
+          alignItems: 'start',
+          width: 'fit-content',
+          maxWidth: '100%',
+        }}>
           {/* Country A */}
           <div style={{ flex: 1, padding: 0 }}>
             <div style={{ ...mono, fontSize: '10px', color: FG, opacity: 0.45, marginBottom: '8px', letterSpacing: '0.1em' }}>COUNTRY A</div>

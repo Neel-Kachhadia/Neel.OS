@@ -261,7 +261,6 @@ export default function Home() {
 
   const isProject = termState === 'neurofin' || termState === 'equity' || termState === 'market';
   const isChat = termState === 'chat';
-  const isOffWhite = termState === 'identity';
 
   return (
     <>
@@ -277,7 +276,7 @@ export default function Home() {
       {/* Permanent chrome — shown after boot */}
       {!booting && (
         <>
-          <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />
+          {!isChat && <FilesystemSidebar currentPath={currentPath} onNavigate={handleNavigate} />}
           <ModeSwitcher mode={mode} onChange={handleModeChange} />
           {termState !== 'terminal-root' && !isProject && !isChat && <PathIndicator path={currentPath} />}
           <SystemHealth
@@ -286,12 +285,14 @@ export default function Home() {
             motionProfile={motionProfile}
             activeState={termState}
           />
-          <CommandTerminal
-            currentPath={currentPath}
-            onNavigate={handleNavigate}
-            onModeChange={handleModeChange}
-            terminalState={termState}
-          />
+          {!isChat && (
+            <CommandTerminal
+              currentPath={currentPath}
+              onNavigate={handleNavigate}
+              onModeChange={handleModeChange}
+              terminalState={termState}
+            />
+          )}
 
           {/* Back button for non-root states */}
           {termState !== 'terminal-root' && (
@@ -301,11 +302,11 @@ export default function Home() {
               style={{
                 position: 'fixed',
                 top: '24px',
-                left: 'calc(200px + 24px)',
+                left: isChat ? '24px' : 'calc(200px + 24px)',
                 zIndex: 100,
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
-                color: isOffWhite ? 'rgba(10,10,10,0.5)' : isProject ? STATE_BACK_COLOR[termState] : 'rgba(245,240,232,0.5)',
+                color: isProject ? STATE_BACK_COLOR[termState] : 'rgba(245,240,232,0.5)',
                 cursor: 'pointer',
                 letterSpacing: '0.05em',
                 background: 'none',
