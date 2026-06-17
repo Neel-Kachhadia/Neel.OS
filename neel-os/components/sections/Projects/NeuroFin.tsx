@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import GlobalTaxCalculator from './GlobalTaxCalculator';
+import { answerProjectAsk } from '@/lib/projectAsk';
+import { playCommandEnter } from '@/lib/soundEngine';
 
 const AgentTrace = dynamic(() => import('./AgentTrace'), { ssr: false, loading: () => null });
 
@@ -43,9 +45,56 @@ export default function NeuroFin({ soundEnabled = false, onStateChange }: NeuroF
   const [traceRun, setTraceRun] = useState(0);
   const [projectOutput, setProjectOutput] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [askInput, setAskInput] = useState('');
+  const [askTranscript, setAskTranscript] = useState<string[]>([]);
+  const [askLoading, setAskLoading] = useState(false);
+  const [askError, setAskError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const submitAskQuery = useCallback(async (raw: string) => {
+    const text = raw.trim();
+    if (!text || askLoading) return;
+    if (soundEnabled) playCommandEnter();
+
+    const localAnswer = answerProjectAsk('neurofin', text);
+    setAskTranscript(prev => [...prev, `> ${text}`, '']);
+    setAskInput('');
+    setAskError('');
+    setAskLoading(true);
+
+    try {
+      const res = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: text,
+          context: {
+            source: 'neurofin-project-ask',
+            project: 'NeuroFin',
+            localAnswer,
+          },
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error(res.status === 503 ? 'groq api not configured' : 'groq query failed');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setAskTranscript(prev => [...prev.slice(0, -1), `${prev[prev.length - 1] ?? ''}${chunk}`]);
+      }
+    } catch (err) {
+      setAskError(err instanceof Error ? err.message : 'groq connection failed');
+      setAskTranscript(prev => [...prev.slice(0, -1), localAnswer]);
+    } finally {
+      setAskLoading(false);
+    }
+  }, [askLoading, soundEnabled]);
 
   const handleProjectCommand = useCallback((raw: string) => {
     const cmd = raw.trim().toLowerCase();
@@ -58,13 +107,18 @@ export default function NeuroFin({ soundEnabled = false, onStateChange }: NeuroF
     if (cmd === 'ask')       { setActive('ask');       return; }
     if (cmd === 'readme')    { setActive('readme');    return; }
     if (cmd === 'git log' || cmd === 'git') { setActive('git'); return; }
+    if (cmd.startsWith('ask ') || cmd.startsWith('query ')) {
+      setActive('ask');
+      void submitAskQuery(raw.replace(/^(ask|query)\s+/i, ''));
+      return;
+    }
     if (cmd === 'help') {
       setProjectOutput(prev => [...prev, 'available: trace, calculate, ask, readme, git log, back']);
       return;
     }
     if (cmd === 'clear') { setProjectOutput([]); return; }
     setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: trace, calculate, ask, readme, git log, back']);
-  }, [onStateChange]);
+  }, [onStateChange, submitAskQuery]);
 
   return (
     <section
@@ -130,11 +184,29 @@ git log      — commit history`}
             NEEL.OS  ·  QUERY INTERFACE  ·  <span style={{ color: GREEN }}>ONLINE ●</span>
           </div>
           <MinorSeparator compact />
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', maxWidth: '720px' }}>
+          {(askTranscript.length > 0 || askLoading || askError) && (
+            <pre style={{ ...preStyle, marginTop: '16px', maxWidth: '760px', color: askError ? AMBER : FG, opacity: 0.82 }}>
+              {askTranscript.join('\n')}
+              {askLoading ? '▌' : ''}
+            </pre>
+          )}
+          {askError && (
+            <Line text={`[fallback] ${askError}`} accent style={{ marginTop: '8px', opacity: 0.75 }} />
+          )}
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              void submitAskQuery(askInput);
+            }}
+            style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', maxWidth: '720px' }}
+          >
             <span style={{ color: AMBER }}>{'>'}</span>
             <input
               aria-label="NeuroFin query input"
+              value={askInput}
+              onChange={e => setAskInput(e.target.value)}
               placeholder="_"
+              disabled={askLoading}
               style={{
                 flex: 1,
                 background: 'transparent',
@@ -146,7 +218,7 @@ git log      — commit history`}
                 caretColor: AMBER,
               }}
             />
-          </div>
+          </form>
         </TerminalBlock>
       )}
 

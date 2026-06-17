@@ -5,6 +5,8 @@ import {
   LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { COMPANIES, Company } from '@/lib/companies';
+import { answerProjectAsk } from '@/lib/projectAsk';
+import { playCommandEnter } from '@/lib/soundEngine';
 
 const BG = '#0A0A0A';
 const FG = '#F5F0E8';
@@ -48,16 +50,65 @@ interface EquityProps {
   onStateChange?: (state: string) => void;
 }
 
-export default function Equity({ onStateChange }: EquityProps) {
+export default function Equity({ soundEnabled = false, onStateChange }: EquityProps) {
   const [active, setActive] = useState<TabId>('thesis');
   const [selected, setSelected] = useState<Company | null>(null);
   const reliance = COMPANIES.find(c => c.id === 'RELIANCE') ?? COMPANIES[0];
   const chartCompany = selected ?? reliance;
   const [projectOutput, setProjectOutput] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [askInput, setAskInput] = useState('');
+  const [askTranscript, setAskTranscript] = useState<string[]>([]);
+  const [askLoading, setAskLoading] = useState(false);
+  const [askError, setAskError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const submitAskQuery = useCallback(async (raw: string) => {
+    const text = raw.trim();
+    if (!text || askLoading) return;
+    if (soundEnabled) playCommandEnter();
+
+    const context = { selectedCompany: chartCompany };
+    const localAnswer = answerProjectAsk('equity', text, context);
+    setAskTranscript(prev => [...prev, `> ${text}`, '']);
+    setAskInput('');
+    setAskError('');
+    setAskLoading(true);
+
+    try {
+      const res = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: text,
+          context: {
+            source: 'equity-project-ask',
+            project: 'Equity Research Platform',
+            selectedCompany: chartCompany,
+            localAnswer,
+          },
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error(res.status === 503 ? 'groq api not configured' : 'groq query failed');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setAskTranscript(prev => [...prev.slice(0, -1), `${prev[prev.length - 1] ?? ''}${chunk}`]);
+      }
+    } catch (err) {
+      setAskError(err instanceof Error ? err.message : 'groq connection failed');
+      setAskTranscript(prev => [...prev.slice(0, -1), localAnswer]);
+    } finally {
+      setAskLoading(false);
+    }
+  }, [askLoading, chartCompany, soundEnabled]);
 
   const handleProjectCommand = useCallback((raw: string) => {
     const cmd = raw.trim().toLowerCase();
@@ -76,6 +127,11 @@ export default function Equity({ onStateChange }: EquityProps) {
     if (cmd === 'ask')     { setActive('ask');     return; }
     if (cmd === 'readme')  { setActive('readme');  return; }
     if (cmd === 'git log' || cmd === 'git') { setActive('git'); return; }
+    if (cmd.startsWith('ask ') || cmd.startsWith('query ')) {
+      setActive('ask');
+      void submitAskQuery(raw.replace(/^(ask|query)\s+/i, ''));
+      return;
+    }
     if (cmd.startsWith('analyse ')) {
       const sym = raw.trim().slice(8).toUpperCase();
       const company = COMPANIES.find(c => c.id === sym);
@@ -96,7 +152,7 @@ export default function Equity({ onStateChange }: EquityProps) {
     }
     if (cmd === 'clear') { setProjectOutput([]); return; }
     setProjectOutput(prev => [...prev, `command not found: ${raw}`, 'available: thesis, analyse, chart, ask, readme, git log, chat, back']);
-  }, [onStateChange, active, selected]);
+  }, [onStateChange, active, selected, submitAskQuery]);
 
   return (
     <section
@@ -195,11 +251,29 @@ confidence: 0.81`}
             NEEL.OS  ·  QUERY INTERFACE  ·  <span style={{ color: GREEN }}>ONLINE ●</span>
           </div>
           <MinorSeparator compact />
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', maxWidth: '720px' }}>
+          {(askTranscript.length > 0 || askLoading || askError) && (
+            <pre style={{ ...preStyle, marginTop: '16px', maxWidth: '760px', color: askError ? STEEL : FG, opacity: 0.82 }}>
+              {askTranscript.join('\n')}
+              {askLoading ? '▌' : ''}
+            </pre>
+          )}
+          {askError && (
+            <Line text={`[fallback] ${askError}`} accent style={{ marginTop: '8px', opacity: 0.75 }} />
+          )}
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              void submitAskQuery(askInput);
+            }}
+            style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', maxWidth: '720px' }}
+          >
             <span style={{ color: STEEL }}>{'>'}</span>
             <input
               aria-label="Equity query input"
+              value={askInput}
+              onChange={e => setAskInput(e.target.value)}
               placeholder="_"
+              disabled={askLoading}
               style={{
                 flex: 1,
                 background: 'transparent',
@@ -211,7 +285,7 @@ confidence: 0.81`}
                 caretColor: STEEL,
               }}
             />
-          </div>
+          </form>
         </TerminalBlock>
       )}
 

@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { COMPANIES, Company } from '@/lib/companies';
 import { playCommandEnter } from '@/lib/soundEngine';
+import { answerProjectAsk } from '@/lib/projectAsk';
 
 // Bloomberg amber color system
 const AMB   = '#FFB800';
@@ -148,7 +149,13 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
     if (cmd === 'charts')    { setActiveKey('CHARTS');    return; }
     if (cmd === 'alerts')    { setActiveKey('ALERTS');    return; }
     if (cmd === 'portfolio') { setActiveKey('PORTFOLIO'); return; }
+    if (cmd === 'ask')       { setActiveKey('PORTFOLIO'); return; }
     if (cmd === 'help')      { setActiveKey('F1:HELP');   return; }
+    if (cmd.startsWith('ask ') || cmd.startsWith('query ')) {
+      setActiveKey('PORTFOLIO');
+      setPortfolioQuery(raw.replace(/^(ask|query)\s+/i, ''));
+      return;
+    }
     if (cmd.startsWith('chart ')) {
       const sym = raw.trim().slice(6).toUpperCase();
       const company = COMPANIES.find(c => c.id === sym);
@@ -268,6 +275,12 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
     if (!text || portfolioLoading) return;
 
     if (soundEnabled) playCommandEnter();
+    const localAnswer = answerProjectAsk('market', text, {
+      selectedCompany: selected,
+      livePrice,
+      range,
+      activeAlerts,
+    });
     setPortfolioLoading(true);
     setPortfolioResponse('');
     setPortfolioError('');
@@ -286,11 +299,13 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
             range,
             chartPoints: points.slice(-12),
             activeAlerts,
+            localAnswer,
           },
         }),
       });
       if (!res.ok || !res.body) {
-        setPortfolioError(res.status === 503 ? 'api not configured' : 'query failed');
+        setPortfolioError(res.status === 503 ? 'groq api not configured' : 'groq query failed');
+        setPortfolioResponse(localAnswer);
         return;
       }
       const reader = res.body.getReader();
@@ -301,7 +316,8 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
         setPortfolioResponse(prev => prev + decoder.decode(value, { stream: true }));
       }
     } catch {
-      setPortfolioError('connection failed');
+      setPortfolioError('groq connection failed');
+      setPortfolioResponse(localAnswer);
     } finally {
       setPortfolioLoading(false);
     }
@@ -680,7 +696,8 @@ export default function MarketTerminal({ soundEnabled = false, onStateChange }: 
                   minHeight: '40px',
                 }}
               >
-                {portfolioError || portfolioResponse}
+                {portfolioError && <div style={{ color: DN, marginBottom: portfolioResponse ? '8px' : 0 }}>[fallback] {portfolioError}</div>}
+                {portfolioResponse}
                 {portfolioLoading && <span style={{ color: AMB }}>▌</span>}
               </div>
             )}
