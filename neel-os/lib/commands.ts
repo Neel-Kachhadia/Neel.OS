@@ -287,7 +287,6 @@ const HELP_OUTPUT = [
   'contact',
   '  ssh transmission   open transmission channel',
   '  sudo hire          open direct reach console',
-  '  sudo hire-neel     open direct reach console',
   '',
   '──────────────────────────────────────────────────────────',
 ];

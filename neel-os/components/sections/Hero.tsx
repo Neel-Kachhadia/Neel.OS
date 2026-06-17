@@ -141,7 +141,6 @@ const HELP_LINES = [
   '  open linkedin',
   '',
   '  sudo hire',
-  '  sudo hire-neel',
   '',
   '──────────────────────────────────────────────────────────',
 ];
@@ -659,7 +658,6 @@ function DesktopIdentityCard({ uptime }: { uptime: string }) {
         <div>open linkedin</div>
         <div style={{ height: '1.7em' }} />
         <div>sudo hire</div>
-        <div>sudo hire-neel</div>
       </div>
     </div>
   );
@@ -670,7 +668,7 @@ function MobileIdentityCard({ uptime, onCommand }: { uptime: string; onCommand: 
     'run neurofin', 'run equity', 'run market',
     'cat identity.md', '/logs', '/stack', 'chat',
     'ssh transmission', 'cat resume.pdf', 'open github', 'open linkedin',
-    'sudo hire', 'sudo hire-neel',
+    'sudo hire',
   ];
   return (
     <div style={{ lineHeight: '1.7' }}>
